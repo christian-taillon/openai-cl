@@ -13,18 +13,18 @@ if args.api_key:
     # Set API key from command line argument
     openai.api_key = args.api_key
     print("API Key has been set for this session.")
+    print("Remember, this environment variable will only persist for the duration of this script. "
+          "If you want to avoid providing your API key each time, please save your API key as "
+          "an environment variable in your system settings.")
 else:
     # Get API key from environment variables
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    openai.api_key = os.getenv("OPENAI_API_TOKEN")
 
 # Check if API key is provided or not
 if openai.api_key is None:
     print("No OpenAI API Key provided. Please provide your API key.")
     exit()
 
-print("Remember, this environment variable will only persist for the duration of this script. "
-      "If you want to avoid providing your API key each time, please save your API key as "
-      "an environment variable in your system settings.")
 
 # Starting the conversation with the AI
 messages = []
