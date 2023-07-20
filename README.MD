@@ -20,16 +20,25 @@ pip install openai
 
 ## Setting up the OpenAI API Key
 
-You'll need your OpenAI API key to run this application. This key can be set up as an environment variable. The steps to set an environment variable depend on your operating system.
+You'll need your OpenAI API key to run this application.
+
+You can obtain an API key in the [API Keys Settings](https://platform.openai.com/account/api-keys) on the OpenAI platform.
+
+This key can be set up as an environment variable. The steps to set an environment variable depend on your operating system.
 
 ### MacOS / Linux
-
+Export in terminal session.
 1. Open Terminal
 2. Run the following command, replacing `your_api_key` with your actual OpenAI API key:
 
 ```bash
 export OPENAI_API_TOKEN="your_api_key"
 ```
+
+### MacOS / Linux
+Alternatively, add the environment variable in your sources.
+1. Open ~/.bash_aliases or ~/bashrc in an editor of your choice.
+2. Add `export OPENAI_API_TOKEN="1234567890987654321"` at the bottom replacing the text with your token.
 
 ### Windows
 
