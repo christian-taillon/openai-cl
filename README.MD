@@ -54,19 +54,24 @@ Alternatively, add the environment variable in your sources.
 You can interactively chat with an AI model by running the script:
 
 ```bash
+python script.py
+```
+
+If you did not add your API to your environment varriables you can pass it wiht the `--api_key` argument.
+```bash
 python script.py --api_key YOUR_API_KEY
 ```
 
 You can specify a model to use for the conversation:
 
 ```bash
-python script.py --api_key YOUR_API_KEY -m text-davinci-002
+python script.py -m text-davinci-002
 ```
 
 You can list the available models:
 
 ```bash
-python script.py --api_key YOUR_API_KEY -l
+python script.py -l
 ```
 
 During the conversation, you can type "exit" to end the conversation and exit the program.
