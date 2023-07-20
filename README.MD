@@ -1,53 +1,63 @@
-# OpenAI Interactive Chat CommandLine
-State: Pre-Release
-#### Author: Christian Taillon
+# README for OpenAI Chat Application
 
-This script allows you to interactively chat with the OpenAI using the `openai` Python client. This script is cross-platform and can be run on any system that supports Python and has the OpenAI Python client installed.
+## Description
 
-According to OpenAI's current Security policies at [openai.com](https://openai.com/security), input provided to API's is not currently used to train future models. While this doesn't mean OpenaAI doesn't store prompts, this does offer a method of leveraging OpenAI's services in a way that policy prohibits the use of said prompts for future training.
+This project was created by Christian. The main goal of this project was to provide a simple and user-friendly way to interact with the OpenAI API. There weren't any clean existing projects to talk to the OpenAI APIs easily, so this project was created to fill that gap.
 
-## Setup
+According to OpenAI's documentation, they will not use API input to train future models. Specifically, they state:
 
-1. Ensure that Python is installed on your system. If not, you can download and install it from the [official Python website](https://www.python.org/downloads/).
+> "OpenAI will not use data submitted by customers via our API to train or improve our models"
 
-2. Install the `openai` Python client by running the following command in your terminal:
+This project uses the OpenAI Python client and allows you to choose different models, list available models, and interactively chat with the chosen AI model.
 
-    ```bash
-    pip install openai
-    ```
+## Installation
 
-3. Clone or download this repository and navigate to its directory in your terminal.
+First, you need to install the OpenAI Python client. This can be done using pip:
+
+```bash
+pip install openai
+```
+
+## Setting up the OpenAI API Key
+
+You'll need your OpenAI API key to run this application. This key can be set up as an environment variable. The steps to set an environment variable depend on your operating system.
+
+### MacOS / Linux
+
+1. Open Terminal
+2. Run the following command, replacing `your_api_key` with your actual OpenAI API key:
+
+```bash
+export OPENAI_API_TOKEN="your_api_key"
+```
+
+### Windows
+
+1. Open the Start Menu and search for "Environment Variables".
+2. Click on "Edit the system environment variables".
+3. In the System Properties window that appears, click on "Environment Variables".
+4. In the Environment Variables window, click "New" under the "User variables" section.
+5. Enter `OPENAI_API_TOKEN` for the Variable name and your actual OpenAI API key for the Variable value.
+6. Click OK on all windows.
 
 ## Usage
 
-This script accepts an optional command line argument, `--api_token`, to set the OpenAI API key. If not provided, the script will look for an environment variable named `OPENAI_API_TOKEN`.
-
-### Using the `--api_token` Argument
-
-To use the `--api_token` argument, run the script as follows:
+You can interactively chat with an AI model by running the script:
 
 ```bash
-python openai-keyset.py --api_token YOUR_OPENAI_API_TOKEN
+python script.py --api_key YOUR_API_KEY
 ```
 
-Replace `YOUR_OPENAI_API_TOKEN` with your actual OpenAI API token.
-
-This will set the API token for the current script execution only. It does not permanently save the API token as an environment variable.
-
-### Using the `OPENAI_API_TOKEN` Environment Variable
-
-To use the `OPENAI_API_TOKEN` environment variable, you need to set it in your system settings. The process to do this varies depending on your operating system.
-
-Once the `OPENAI_API_TOKEN` environment variable is set, you can run the script as follows:
+You can specify a model to use for the conversation:
 
 ```bash
-python openai-keyset.py
+python script.py --api_key YOUR_API_KEY -m text-davinci-002
 ```
 
-## Note
+You can list the available models:
 
-Remember, the `OPENAI_API_TOKEN` environment variable set via the command line will only persist for the duration of the script. If you want to avoid providing your API token each time, save your API token as an environment variable in your system settings.
+```bash
+python script.py --api_key YOUR_API_KEY -l
+```
 
-This script will continue the conversation until you manually end the program, such as by pressing `Ctrl+C`.
-
----
+During the conversation, you can type "exit" to end the conversation and exit the program.
