@@ -1,4 +1,4 @@
-# README for OpenAI Chat Application
+# OpenAI Chat Application
 
 ## Description
 
