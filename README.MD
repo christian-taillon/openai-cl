@@ -37,7 +37,7 @@ export OPENAI_API_TOKEN="your_api_key"
 ```
 #### Method 2
 Alternatively, add the environment variable in your sources.
-1. Open ~/.bash_aliases or ~/bashrc in an editor of your choice.
+1. Open `~/.bash_aliases` or `~/bashrc` in an editor of your choice.
 2. Add `export OPENAI_API_TOKEN="your_api_key"` at the bottom replacing the text with your token.
 
 ### Windows
