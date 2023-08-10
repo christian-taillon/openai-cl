@@ -1,6 +1,9 @@
 import openai
 import os
 import argparse
+from prompt_toolkit import prompt
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.keys import Keys
 
 # Define argument parser
 parser = argparse.ArgumentParser(description='Interactively chat with OpenAI.')
@@ -37,30 +40,52 @@ if args.l_models:
 # Get model from command line arguments or use default
 model = args.model
 
+# Create a flag to indicate submission
+submit_flag = False
+
+# Create custom keybindings
+kb = KeyBindings()
+
+@kb.add('c-space')
+def _(event):
+    global submit_flag
+    submit_flag = True
+    event.app.exit(result=event.app.current_buffer.text)
+
 # Starting the conversation with the AI
 messages = []
 
 while True:
-    # Get user input
-    user_input = input("You: ")
+    # Use prompt-toolkit for input, allowing multi-line by default
+    user_input = prompt("You (Ctrl+Space to submit): ", multiline=True, key_bindings=kb)
 
-    # Check if the user wants to exit the conversation
-    if user_input.lower() == "exit":
-        print("Ending the conversation. Goodbye!")
-        break
+    if not user_input:  # If the input is empty or None, just continue
+        continue
 
-    # Add user message to messages
-    messages.append({"role": "user", "content": user_input})
+    # Check the submit flag
+    if submit_flag:
+        submit_flag = False  # reset the flag
 
-    # Get AI response
-    response = openai.ChatCompletion.create(
-      model=model,
-      messages=messages,
-      temperature=0.7
-    )
+        # Check if the user wants to exit the conversation
+        if user_input.lower() == "exit":
+            print("Ending the conversation. Goodbye!")
+            break
 
-    # Print AI response
-    print("AI: ", response['choices'][0]['message']['content'])
+        # Add user message to messages
+        messages.append({"role": "user", "content": user_input})
 
-    # Add AI message to messages for the context of the next message
-    messages.append({"role": "assistant", "content": response['choices'][0]['message']['content']})
+        # Get AI response
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            temperature=0.7
+        )
+
+        # Print AI response
+        print("AI: ", response['choices'][0]['message']['content'])
+
+        # Add AI message to messages for the context of the next message
+        messages.append({"role": "assistant", "content": response['choices'][0]['message']['content']})
+
+    elif not user_input:  # If the input is empty, just continue
+        continue
