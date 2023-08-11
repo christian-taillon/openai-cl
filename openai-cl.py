@@ -4,6 +4,8 @@ import argparse
 import sys
 import time
 import threading
+import subprocess
+from prompt_toolkit.keys import Keys
 from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
@@ -18,35 +20,33 @@ os.system('cls' if os.name == 'nt' else 'clear')
 
 def display_intro():
     coffee_art = '''
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡾⡇⠀⢶⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⣠⡾⢋⡼⠁⠀⣸⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⣿⣳⠏⠀⣠⠞⣡⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⢿⣿⡄⢸⣯⡾⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠳⠸⡟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⡀⢀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣁⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⢸⡟⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⢻⢿⣷⢀⣀⣀⣀⡀⠀
-⢸⡇⠀⣶⢦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠶⣒⣒⣿⣋⣥⣄⡉⢻⣆
-⢸⣿⠈⣇⣾⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠶⠶⢶⣿⠁⠀⢸⡇⢰⣿
-⠀⢻⣆⢻⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠒⠒⣾⣯⣤⣴⠟⣡⣿⠃
-⠀⠈⢿⣎⠻⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⣿⣿⣭⣥⣴⡿⠟⠁⠀
-⠀⠀⠈⢿⣷⣄⠑⣦⡄⠀⠀⠀⣀⠀⢛⣻⣿⡟⠉⠉⠉⠀⠀⠀⠀⠀
-⠀⣴⡶⠶⠿⠿⢿⣶⣤⣤⣤⣤⣽⣿⠿⠛⣛⣟⣷⡆⠀⠀⠀⠀⠀⠀
-⠀⠛⠷⠶⣤⣤⣤⣤⣴⣾⣿⣿⣶⣦⣤⣶⣶⡾⠟⠁⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⡾⡇⠀⢶⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⣠⡾⢋⡼⠁⠀⣸⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⣿⣳⠏⠀⣠⠞⣡⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⢿⣿⡄⢸⣯⡾⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠳⠸⡟⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⠀⡀⢀⣀⣀⣀⣀⣀⣀⣀⣀⣀⣁⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+            ⢸⡟⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⠛⢻⢿⣷⢀⣀⣀⣀⡀⠀
+            ⢸⡇⠀⣶⢦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠶⣒⣒⣿⣋⣥⣄⡉⢻⣆
+            ⢸⣿⠈⣇⣾⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠶⠶⢶⣿⠁⠀⢸⡇⢰⣿
+            ⠀⢻⣆⢻⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠒⠒⣾⣯⣤⣴⠟⣡⣿⠃
+            ⠀⠈⢿⣎⠻⣷⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⣿⣿⣭⣥⣴⡿⠟⠁⠀
+            ⠀⠀⠈⢿⣷⣄⠑⣦⡄⠀⠀⠀⣀⠀⢛⣻⣿⡟⠉⠉⠉⠀⠀⠀⠀⠀
+            ⠀⣴⡶⠶⠿⠿⢿⣶⣤⣤⣤⣤⣽⣿⠿⠛⣛⣟⣷⡆⠀⠀⠀⠀⠀⠀
+            ⠀⠛⠷⠶⣤⣤⣤⣤⣴⣾⣿⣿⣶⣦⣤⣶⣶⡾⠟⠁⠀⠀⠀⠀⠀⠀
     '''
 
-    print("Welcome to openai-cl by Christian Taillon!")
+    print("Welcome to openai-cl!")
     print("Simplicity meets the power of OpenAI's ChatGPT API.")
     print("Interact with ease: Your inputs and outputs are not used for OpenAI model training.")
     print(coffee_art)
-    print("\nQuick Guide:")
+    print("                                 Cheers (with coffee)")
+    print("                                         - Christian ☕\n")
+    print("Quick Guide:")
     print("- Simply type or paste your content below.")
-    print("- For multi-line inputs, press `Ctrl+Space` to submit.")
-    print("- Different comamnds are available: help, clear, exit, etc.")
-    print("- Use `Ctrl+Space` after typing a command to activate it.")
-    print("- User `Ctrl+q` to end the session.\n")
-display_intro()
-
+    print("- Use `Ctrl+Space` after typing a prompt or command.")
+    print("- Use `Ctrl+q` to end the session.\n")
 def print_processing():
     sys.stdout.write("Processing...\n")
     sys.stdout.flush()
@@ -54,6 +54,16 @@ def print_processing():
 def clear_last_line():
     sys.stdout.write("\033[F")  # Move cursor up one line
     sys.stdout.write("\033[K")  # Clear to the end of line
+
+class CustomHelpFormatter(argparse.HelpFormatter):
+    def _format_usage(self, usage, actions, groups, prefix):
+        return "\nUsage:\n  openai-cl.py [options]\n"
+
+    def _format_action(self, action):
+        parts = super()._format_action(action)
+        if action.option_strings:
+            parts = '  ' + parts
+        return parts
 
 class Spinner:
     busy = False
@@ -96,42 +106,98 @@ class Spinner:
 # Create helper
 def display_help():
     os.system('cls' if os.name == 'nt' else 'clear')
-    print("OpenAI Command-Line Interface Help")
-    print("===================================")
+    print("OpenAI Command-Line Interface (CLI) Help")
+    print("=========================================")
+
     print("\nUsage:")
     print("  openai-cl.py [options]\n")
+
     print("Options:")
-    print("  --api_key <key>    Provide your OpenAI API key.")
-    print("  -m, --model <name> Specify the model to be used for the conversation (default: gpt-3.5-turbo).")
-    print("  -l, --l-models     List available models.\n")
-    print("Commands within the interactive session:")
-    print("  help               Display this help message.")
-    print("  clear              Clear the terminal screen.")
-    print("  exit               Exit the interactive session.\n")
-    print("Examples:")
-    print("  openai-cl.py --api_key YOUR_API_KEY_HERE")
-    print("  openai-cl.py --model gpt-3.5-turbo-16k\n")
+    print("  -h, --help                Display this help message.")
+    print("  --api_key <key>           Provide your OpenAI API key.")
+    print("  -m, --model <name>        Specify the model (default: gpt-3.5-turbo).")
+    print("  -l, --l-models            List available models.")
+    print("  -s, --software <name>     Learn about software using its man page.\n")
+
+    print("Interactive Commands:")
+    print("  help                      Show help message.")
+    print("  clear                     Clear the terminal screen.")
+    print("  exit                      End the interactive session.\n")
+
     print("Interactive Session Tips:")
     print("- Type or paste your messages into the terminal.")
-    print("- Submit multi-line messages using `Ctrl+Space`.")
-    print("- Responses from the AI are displayed after the 'AI:' prompt.")
-    print("- Use commands like help, clear, or exit by typing them and submitting with `Ctrl+Space`.")
-    print("- User `Ctrl+q` to end the session.")
-    print("\nNote: Ensure that your API key is kept secret. Avoid sharing your key or exposing it in public spaces.")
+    print("- Submit multi-line messages with `Ctrl+Space`.")
+    print("- AI responses appear after the 'AI:' prompt.")
+    print("- Use commands like help, clear, or exit by typing and submitting with `Ctrl+Space`.")
+    print("- End the session with `Ctrl+q`.\n")
+
+    print("Examples:")
+    print("  openai-cl.py --api_key YOUR_API_KEY_HERE")
+    print("  openai-cl.py -m gpt-3.5-turbo-16k")
+    print("  openai-cl.py -s nano")
+    print("  openai-cl.py --api_key YOUR_API_KEY_HERE -m gpt-3.5-turbo-16k -s vim\n")
+
+    print("Note: Keep your API key confidential. Do not expose or share it in public spaces.")
     print()
 
 
+# Teach GPT about a software
+def get_software_info(software_name):
+    try:
+        man_page = subprocess.check_output(['man', software_name], universal_newlines=True)
+        messages.append({"role": "assistant", "content": f"Here's the man page for {software_name}:\n{man_page}"})
+    except subprocess.CalledProcessError:
+        # Clear the screen
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+        # Display the message
+        print(f"I'm sorry, I couldn't find a man page for {software_name}.")
+        print("Please ensure that the software name is correct or that a man page exists for it.")
+        print()
+        # Prompt the user to press any key to continue
+        print("Press any key to continue...")
+
+        kb = KeyBindings()
+
+        @kb.add(Keys.Any)
+        def _(event):
+            event.app.exit()
+
+        session = PromptSession(key_bindings=kb)
+        session.prompt()
+
+        # Exit the script
+        exit()
+    print("\nNote: GPT has been trained on the software provided. You can now ask questions and have a conversation about the man page.\n")
+
 # Define argument parser
-parser = argparse.ArgumentParser(description='Interactively chat with OpenAI.')
+# Help is handled in a custom way
+parser = argparse.ArgumentParser(description='Interactively chat with OpenAI.', add_help=False)
 parser.add_argument('--api_key', type=str, help='Your OpenAI API key.')
 parser.add_argument('-m', '--model', type=str, default="gpt-3.5-turbo", help='The model to be used for the conversation.')
 parser.add_argument('-l', '--l-models', action='store_true', help='List available models.')
+parser.add_argument('-s', '--software', type=str, help='Learn about a software using its man page.')
+parser.add_argument('-h', '--help', action='store_true', help='Display this help message and exit.')
 
 # Parse arguments
 args = parser.parse_args()
 
+# Starting the conversation with the AI
+messages = []
+
+if args.help:
+    display_help()
+    sys.exit(0)
+
+# Software information
+if args.software:
+    get_software_info(args.software)  # Pass the software name to the function
+
+if not args.software:
+    display_intro()
+
+# Set API key from command line argument
 if args.api_key:
-    # Set API key from command line argument
     openai.api_key = args.api_key
     print("API Key has been set for this session.")
     print("Remember, this environment variable will only persist for the duration of this script. "
@@ -174,11 +240,13 @@ kb = KeyBindings()
 # Create a prompt session
 session = PromptSession()
 
+# Add keyboard shortcuts
 @kb.add('c-space')
 def _(event):
     global submit_flag
     submit_flag = True
     event.app.exit(result=event.app.current_buffer.text)
+
 
 @kb.add('c-q')
 def _(event):
@@ -186,10 +254,8 @@ def _(event):
     exit_flag = True
     event.app.exit()
 
+# Prevent the script from existing
 exit_flag = False
-
-# Starting the conversation with the AI
-messages = []
 
 while True:
     # When prompting the user:
@@ -198,6 +264,7 @@ while True:
                                 key_bindings=kb,
                                 style=style,
                                 wrap_lines=True,
+                                mouse_support=True,
                                 prompt_continuation=lambda width, line_number, is_soft_wrap: '    ')
 
     # Check for exit_flag
