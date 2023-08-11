@@ -163,7 +163,8 @@ submit_flag = False
 style = Style.from_dict({
     'prompt': 'bold',
     'input': 'green',
-    'you-prompt': 'bg:white fg:orange bold',
+    'you-prompt': 'bg:orange fg:white bold',
+    ## 'you-prompt': 'bg:white fg:orange bold',
     # Currently the ai-prompt is defined inline using the FormattedText PromptSession near the bottom
 })
 
@@ -241,7 +242,7 @@ while True:
 
         # Print AI response in bold
         print()  # This will add a line break
-        print_formatted_text(FormattedText([('bg:white fg:red bold', '    AI:')]), style=style)
+        print_formatted_text(FormattedText([('bg:red fg:white bold', '    GPT:')]), style=style)
         print("    ", end="")
         print(response['choices'][0]['message']['content'].replace("\n", "\n    "))
         print()  # extra line break for visual separation
