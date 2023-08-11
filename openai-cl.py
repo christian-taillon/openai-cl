@@ -10,6 +10,9 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import FormattedText
 
+# Set title.
+print('\033]0;OpenAI Command-Line Chat\a', end='', flush=True)
+
 # Clear the terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -39,11 +42,19 @@ def display_intro():
     print("\nQuick Guide:")
     print("- Simply type or paste your content below.")
     print("- For multi-line inputs, press `Ctrl+Space` to submit.")
-    print("- Commands available: help, clear, exit. Use `Ctrl+Space` after typing a command to activate it.\n")
+    print("- Different comamnds are available: help, clear, exit, etc.")
+    print("- Use `Ctrl+Space` after typing a command to activate it.")
+    print("- User `Ctrl+q` to end the session.\n")
 display_intro()
 
+def print_processing():
+    sys.stdout.write("Processing...\n")
+    sys.stdout.flush()
 
-# Spinner Class
+def clear_last_line():
+    sys.stdout.write("\033[F")  # Move cursor up one line
+    sys.stdout.write("\033[K")  # Clear to the end of line
+
 class Spinner:
     busy = False
     delay = 0.1
@@ -51,29 +62,64 @@ class Spinner:
     @staticmethod
     def spinning_cursor():
         while 1:
-            for cursor in '|/-\\': yield cursor
+            for cursor in '|/-\\':
+                yield cursor
 
     def __init__(self, delay=None):
         self.spinner_generator = self.spinning_cursor()
-        if delay and float(delay): self.delay = delay
+        if delay and float(delay):
+            self.delay = delay
 
     def spinner_task(self):
         while self.busy:
             sys.stdout.write(next(self.spinner_generator))
             sys.stdout.flush()
             time.sleep(self.delay)
-            sys.stdout.write('\b')
+            sys.stdout.write('\b')  # this line should remove the spinner character
             sys.stdout.flush()
 
-    def __enter__(self):
+    def start(self):
         self.busy = True
         threading.Thread(target=self.spinner_task).start()
 
-    def __exit__(self, exception, value, traceback):
+    def stop(self):
         self.busy = False
         time.sleep(self.delay)
-        if exception is not None:
-            return False
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.stop()
+
+# Create helper
+def display_help():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print("OpenAI Command-Line Interface Help")
+    print("===================================")
+    print("\nUsage:")
+    print("  openai-cl.py [options]\n")
+    print("Options:")
+    print("  --api_key <key>    Provide your OpenAI API key.")
+    print("  -m, --model <name> Specify the model to be used for the conversation (default: gpt-3.5-turbo).")
+    print("  -l, --l-models     List available models.\n")
+    print("Commands within the interactive session:")
+    print("  help               Display this help message.")
+    print("  clear              Clear the terminal screen.")
+    print("  exit               Exit the interactive session.\n")
+    print("Examples:")
+    print("  openai-cl.py --api_key YOUR_API_KEY_HERE")
+    print("  openai-cl.py --model gpt-3.5-turbo-16k\n")
+    print("Interactive Session Tips:")
+    print("- Type or paste your messages into the terminal.")
+    print("- Submit multi-line messages using `Ctrl+Space`.")
+    print("- Responses from the AI are displayed after the 'AI:' prompt.")
+    print("- Use commands like help, clear, or exit by typing them and submitting with `Ctrl+Space`.")
+    print("- User `Ctrl+q` to end the session.")
+    print("\nNote: Ensure that your API key is kept secret. Avoid sharing your key or exposing it in public spaces.")
+    print()
+
 
 # Define argument parser
 parser = argparse.ArgumentParser(description='Interactively chat with OpenAI.')
@@ -133,17 +179,30 @@ def _(event):
     submit_flag = True
     event.app.exit(result=event.app.current_buffer.text)
 
+@kb.add('c-q')
+def _(event):
+    global exit_flag
+    exit_flag = True
+    event.app.exit()
+
+exit_flag = False
+
 # Starting the conversation with the AI
 messages = []
 
 while True:
     # When prompting the user:
-    user_input = session.prompt([('class:you-prompt', '    You :'), ('class:input', '\n    ')],
+    user_input = session.prompt([('class:you-prompt', '    You:'), ('class:input', '\n    ')],
                                multiline=True,
                                 key_bindings=kb,
                                 style=style,
-                                wrap_lines=False,
+                                wrap_lines=True,
                                 prompt_continuation=lambda width, line_number, is_soft_wrap: '    ')
+
+    # Check for exit_flag
+    if exit_flag:
+        print("Ending the conversation. Goodbye!")
+        break
 
     if not user_input:  # If the input is empty or None, just continue
         continue
@@ -153,32 +212,32 @@ while True:
         continue
 
     if user_input.strip().lower() == "help":
-        print("\n    Instructions:")
-        print("    1. Type your message to the AI and press Ctrl+Space to send.")
-        print("    2. You can type multi-line messages. Each new line starts after pressing Enter.")
-        print("    3. To exit the chat, simply type 'exit'.")
-        print("    4. Enjoy chatting with the AI!\n")
+        display_help()
         continue
+
+    # Check if the user wants to exit the conversation
+    if user_input.lower() in ["exit", "q"]:
+        print("Ending the conversation. Goodbye!")
+        break
 
     # Check the submit flag
     if submit_flag:
         submit_flag = False  # reset the flag
 
-        # Check if the user wants to exit the conversation
-        if user_input.lower() == "exit":
-            print("Ending the conversation. Goodbye!")
-            break
-
         # Add user message to messages
         messages.append({"role": "user", "content": user_input})
 
+        print_processing()
+
         # Get AI response using spinner
-        with Spinner():
-            response = openai.ChatCompletion.create(
-                model=model,
-                messages=messages,
-                temperature=0.7
-            )
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            temperature=0.7
+        )
+
+        # Clear the "Processing..." message:
+        clear_last_line()
 
         # Print AI response in bold
         print()  # This will add a line break
@@ -186,7 +245,6 @@ while True:
         print("    ", end="")
         print(response['choices'][0]['message']['content'].replace("\n", "\n    "))
         print()  # extra line break for visual separation
-
 
         # Add AI message to messages for the context of the next message
         messages.append({"role": "assistant", "content": response['choices'][0]['message']['content']})
