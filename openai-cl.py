@@ -1,5 +1,6 @@
 import openai
 import os
+import re
 import argparse
 import sys
 import time
@@ -11,6 +12,13 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.styles import Style
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import FormattedText
+from pygments.lexers import PythonLexer, get_lexer_by_name, guess_lexer
+from prompt_toolkit.shortcuts import prompt
+from prompt_toolkit.lexers import PygmentsLexer
+from pygments import highlight
+from pygments.formatters.terminal import TerminalFormatter
+from rich.console import Console
+from rich.markdown import Markdown
 
 # Set title.
 print('\033]0;OpenAI Command-Line Chat\a', end='', flush=True)
@@ -170,6 +178,37 @@ def get_software_info(software_name):
         exit()
     print("\nNote: GPT has been trained on the software provided. You can now ask questions and have a conversation about the man page.\n")
 
+def highlight_code_blocks(text):
+    # Regular expression to identify code blocks
+    code_block_pattern = re.compile(r'```(.*?)```', re.DOTALL)
+
+    # Function to replace the block with highlighted code
+    def replace_with_highlighted(match):
+        code = match.group(1).strip()
+        language = None
+        if '\n' in code:
+            maybe_lang, rest_of_code = code.split('\n', 1)
+            if not maybe_lang.isalnum():
+                # If the first line isn't a language name, treat the entire block as code
+                rest_of_code = code
+            else:
+                language = maybe_lang
+                code = rest_of_code
+
+        # Guess the lexer if not specified
+        if not language:
+            lexer = guess_lexer(code)
+        else:
+            lexer = get_lexer_by_name(language)
+
+        # Highlight the code
+        return highlight(code, lexer, TerminalFormatter())
+
+    # Replace each code block with its highlighted version
+    highlighted_text = re.sub(code_block_pattern, replace_with_highlighted, text)
+
+    return highlighted_text
+
 # Define argument parser
 # Help is handled in a custom way
 parser = argparse.ArgumentParser(description='Interactively chat with OpenAI.', add_help=False)
@@ -264,7 +303,6 @@ while True:
                                 key_bindings=kb,
                                 style=style,
                                 wrap_lines=True,
-                                mouse_support=True,
                                 prompt_continuation=lambda width, line_number, is_soft_wrap: '    ')
 
     # Check for exit_flag
