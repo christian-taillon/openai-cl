@@ -1,77 +1,133 @@
-# OpenAI Chat Application
+
+---
+
+# 🤖 OpenAI Command-Line Chat Application ☕️
 
 ## Description
+Welcome to the OpenAI Command-Line Chat Application! Born out of a desire for a refined terminal client for OpenAI, this tool bridges the gap between functionality and finesse. Whether you're diving in for quick insights or seeking a seamless interaction experience, this tool has got you covered.
 
-This project was created by Christian. The main goal of this project was to provide a simple and user-friendly way to interact with the OpenAI API. There weren't any clean existing projects to talk to the OpenAI APIs easily, so this project was created to fill that gap.
+- **Rapid "Training" Sessions:** Jump straight in, ask your questions, and receive real-time insights without a hitch.
+- **Mindful of Content Sensitivity:** Your peace of mind matters. Share with confidence, knowing your inputs won't be part of future model training.
+- **Copy-Paste & Multi-Line Inputs:** Enhance your interactions with support for effortless copy-pasting and multi-line inputs.
+- **Aesthetic Terminal Interface:** A delightful terminal experience awaits because aesthetics matter.
+- **Syntax Highlighting:** ChatGPT's responses include syntax highlighting, making code and technical responses easier to read.
+- **Platform Agnostic (Mostly):** Efforts have been made to ensure this tool feels at home, regardless of your OS. However, it's worth noting that my primary testing ground is Linux. If you encounter quirks elsewhere, do give me a shout!
 
-According to OpenAI's documentation, they will not use API input to train future models. Specifically, they state:
+Per OpenAI's documentation:
 
-> "OpenAI will not use data submitted by customers via our API to train or improve our models"
+> "OpenAI will not use data submitted by customers via our API to train or improve our models."
 
-This project uses the OpenAI Python client and allows you to choose different models, list available models, and interactively chat with the chosen AI model.
-
-## Installation
-
-First, you need to install the OpenAI Python client. This can be done using pip:
-
-```bash
-pip install openai
-```
+The project harnesses the OpenAI Python client. It provides functionalities to select different models, list available models, send the man page output to OpenAI to discuss it, and engage in an interactive chat with the chosen AI model.
 
 ## Setting up the OpenAI API Key
+To get started, you'll require an OpenAI API key. Secure yours from the [API Keys Settings](https://platform.openai.com/account/api-keys) on the OpenAI platform.
+> **Note:** Always keep your API key confidential.
 
-You'll need your OpenAI API key to run this application.
 
-You can obtain an API key in the [API Keys Settings](https://platform.openai.com/account/api-keys) on the OpenAI platform.
+## Installation
+Note that these installations haven't been widely tested. It is possible to execute the python script your self and bypass the installers. Simply manually installing the python library requirements and manually adding your API key to your environment variables.
 
-This key can be set up as an environment variable. The steps to set an environment variable depend on your operating system.
+For those who would like install helpers, I have provided some based on other open source projects.
 
-### MacOS / Linux
-#### Method 1
-Export in terminal session.
-1. Open Terminal
-2. Run the following command, replacing `your_api_key` with your actual OpenAI API key:
+### macOS & Linux
 
-```bash
-export OPENAI_API_TOKEN="your_api_key"
-```
-#### Method 2
-Alternatively, add the environment variable in your sources.
-1. Open `~/.bash_aliases` or `~/bashrc` in an editor of your choice.
-2. Add `export OPENAI_API_TOKEN="your_api_key"` at the bottom replacing the text with your token.
+1. **Clone the Repository (or Download the Zip)**:
+   ```bash
+   git clone https://github.com/christian-taillon/openai-cl.git
+   cd openai-cl
+   ```
+
+   Alternatively, if you've provided a direct download, instruct the user to download and extract the zip, then navigate to its directory in the terminal.
+
+2. **Run the Installation Script**:
+   Make the installer script executable and run it:
+   ```bash
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+   During the installation, you'll be prompted to set up a virtual environment. If you don't have `virtualenv` installed, you can choose to skip this step.
+
+   You'll also have the option to set your OpenAI API token as an environment variable. You can either provide your token or skip this step.
+
+3. **Usage**:
+   Once the installation is complete, you can use the tool from anywhere by typing:
+   ```bash
+   openai-cl
+   ```
 
 ### Windows
 
-1. Open the Start Menu and search for "Environment Variables".
-2. Click on "Edit the system environment variables".
-3. In the System Properties window that appears, click on "Environment Variables".
-4. In the Environment Variables window, click "New" under the "User variables" section.
-5. Enter `OPENAI_API_TOKEN` for the Variable name and your actual OpenAI API key for the Variable value.
-6. Click OK on all windows.
+1. **Clone the Repository (or Download the Zip)**:
+   Download the repository zip from the GitHub page or use a Git client if you have one installed.
+
+   Once downloaded, extract the zip and navigate to its directory.
+
+2. **Run the Installation Script**:
+
+   Open a PowerShell prompt as administrator. Navigate to the directory containing the installation script and run:
+
+   ```powershell
+   .\install.ps1
+   ```
+
+   You'll have the option to set your OpenAI API token as an environment variable. You can either provide your token or skip this step.
+
+3. **Usage**:
+   Once the installation is complete, you can use the tool from anywhere by typing `openai-cl` in a command prompt or PowerShell window.
+
 
 ## Usage
 
-You can interactively chat with an AI model by running the script:
+After installation, you can use the `openai-cl` shortcut from anywhere on your system. This allows you to engage in an interactive chat with an AI model:
 
 ```bash
-python script.py
+openai-cl
 ```
 
-If you did not add your API to your environment varriables you can pass it wiht the `--api_key` argument.
-```bash
-python script.py --api_key YOUR_API_KEY
-```
-
-You can specify a model to use for the conversation:
+If you haven't added your API key to your environment variables, you can pass it with the `--api_key` argument:
 
 ```bash
-python script.py -m text-davinci-002
+openai-cl --api_key YOUR_API_KEY
 ```
 
-You can list the available models:
+You can specify a model for the conversation:
 
 ```bash
-python script.py -l
+openai-cl -m gpt-3.5-turbo
 ```
 
-During the conversation, you can type "exit" to end the conversation and exit the program.
+To see a list of available models:
+
+```bash
+openai-cl -l
+```
+
+To learn about a software using its man page:
+
+```bash
+openai-cl -s SOFTWARE_NAME
+```
+
+A few examples of this:
+```bash
+openai-cl -s cat
+openai-cl -s yara
+openai-cl -s docker
+openai-cl -s scp
+```
+
+During the interactive session:
+- Type or paste your messages into the terminal.
+- For multi-line messages, use `Ctrl+Space` to submit.
+- AI responses will follow the 'AI:' prompt.
+- Commands like `help`, `clear`, or `exit` can be typed and submitted with `Ctrl+Space`.
+- Use `Ctrl+q` to end the session.
+
+---
+
+This project was primary made for my own use cases but I wondered if it might be beneficial to others, particularly as it offers a method off accessing OpenAI's services without providing ones prompt for future model training (as of the time of writing).
+
+Encountering bugs? I'm here to help. 😉
+
+**Contributing**: If you'd like to contribute, please fork the repository and use a feature branch. Pull requests are warmly welcome.
