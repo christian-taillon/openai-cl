@@ -19,7 +19,6 @@ from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.panel import Panel
 
 # Set title.
 print('\033]0;OpenAI Command-Line Chat\a', end='', flush=True)
@@ -357,10 +356,11 @@ while True:
         # Clear the "Processing..." message:
         clear_last_line()
 
-        def display_response(response_content):
+        def display_response(response_content: str):
+            """Displays the AI response with markdown rendering."""
             console = Console()
-            markdown_content = Markdown(response_content)
-            console.print(markdown_content)
+            md_content = Markdown(response_content)
+            console.print(md_content, end="")
 
         # Print AI response in bold
         print()  # This will add a line break
