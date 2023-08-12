@@ -19,6 +19,7 @@ from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
 from rich.console import Console
 from rich.markdown import Markdown
+from halo import Halo
 
 # Set title.
 print('\033]0;OpenAI Command-Line Chat\a', end='', flush=True)
@@ -55,6 +56,7 @@ def display_intro():
     print("- Simply type or paste your content below.")
     print("- Use `Ctrl+Space` after typing a prompt or command.")
     print("- Use `Ctrl+q` to end the session.\n")
+
 def print_processing():
     sys.stdout.write("Processing...\n")
     sys.stdout.flush()
@@ -73,43 +75,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):
             parts = '  ' + parts
         return parts
 
-class Spinner:
-    busy = False
-    delay = 0.1
 
-    @staticmethod
-    def spinning_cursor():
-        while 1:
-            for cursor in '|/-\\':
-                yield cursor
-
-    def __init__(self, delay=None):
-        self.spinner_generator = self.spinning_cursor()
-        if delay and float(delay):
-            self.delay = delay
-
-    def spinner_task(self):
-        while self.busy:
-            sys.stdout.write(next(self.spinner_generator))
-            sys.stdout.flush()
-            time.sleep(self.delay)
-            sys.stdout.write('\b')  # this line should remove the spinner character
-            sys.stdout.flush()
-
-    def start(self):
-        self.busy = True
-        threading.Thread(target=self.spinner_task).start()
-
-    def stop(self):
-        self.busy = False
-        time.sleep(self.delay)
-
-    def __enter__(self):
-        self.start()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.stop()
 
 # Create helper
 def display_help():
@@ -341,7 +307,9 @@ while True:
         # Add user message to messages
         messages.append({"role": "user", "content": user_input})
 
-        print_processing()
+        # print_processing()
+        spinner = Halo(text='Processing...', spinner='dots')
+        spinner.start()
 
         # Get AI response using spinner
         response = openai.ChatCompletion.create(
@@ -354,7 +322,9 @@ while True:
         last_response = response['choices'][0]['message']['content']
 
         # Clear the "Processing..." message:
-        clear_last_line()
+        # clear_last_line()
+
+        spinner.stop()
 
         def display_response(response_content: str):
             """Displays the AI response with markdown rendering."""
@@ -367,7 +337,7 @@ while True:
         print_formatted_text(FormattedText([('bg:red fg:white bold', '    GPT:')]), style=style)
         print("    ", end="")
         display_response(response['choices'][0]['message']['content'])
-        print()  # extra line break for visual separation
+        # print()  # extra line break for visual separation
 
         # Add AI message to messages for the context of the next message
         messages.append({"role": "assistant", "content": response['choices'][0]['message']['content']})

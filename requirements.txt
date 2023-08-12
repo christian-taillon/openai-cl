@@ -2,3 +2,4 @@ openai
 prompt-toolkit
 pygments
 rich
+halo
