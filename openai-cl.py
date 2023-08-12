@@ -19,6 +19,7 @@ from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.panel import Panel
 
 # Set title.
 print('\033]0;OpenAI Command-Line Chat\a', end='', flush=True)
@@ -130,7 +131,9 @@ def display_help():
     print("Interactive Commands:")
     print("  help                      Show help message.")
     print("  clear                     Clear the terminal screen.")
-    print("  exit                      End the interactive session.\n")
+    print("  exit                      End the interactive session.")
+    print("  raw                       Display the last AI response in raw format, preserving markdown syntax.")
+    print("  markdown or md            Equivalent to 'raw', shows the last AI response preserving markdown.\n")
 
     print("Interactive Session Tips:")
     print("- Type or paste your messages into the terminal.")
@@ -296,6 +299,9 @@ def _(event):
 # Prevent the script from existing
 exit_flag = False
 
+# Initialize last_response
+last_response = ""
+
 while True:
     # When prompting the user:
     user_input = session.prompt([('class:you-prompt', '    You:'), ('class:input', '\n    ')],
@@ -312,6 +318,9 @@ while True:
 
     if not user_input:  # If the input is empty or None, just continue
         continue
+
+    if user_input.strip().lower() in ["raw", "markdown", "md"]:
+        print(last_response)
 
     if user_input.strip().lower() == "clear":
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -342,14 +351,22 @@ while True:
             temperature=0.7
         )
 
+        # Save the last response.
+        last_response = response['choices'][0]['message']['content']
+
         # Clear the "Processing..." message:
         clear_last_line()
+
+        def display_response(response_content):
+            console = Console()
+            markdown_content = Markdown(response_content)
+            console.print(markdown_content)
 
         # Print AI response in bold
         print()  # This will add a line break
         print_formatted_text(FormattedText([('bg:red fg:white bold', '    GPT:')]), style=style)
         print("    ", end="")
-        print(response['choices'][0]['message']['content'].replace("\n", "\n    "))
+        display_response(response['choices'][0]['message']['content'])
         print()  # extra line break for visual separation
 
         # Add AI message to messages for the context of the next message
