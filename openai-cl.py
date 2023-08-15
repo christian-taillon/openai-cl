@@ -103,7 +103,7 @@ def display_help():
     print("Options:")
     print("  -h, --help                Display this help message.")
     print("  --api_key <key>           Provide your OpenAI API key.")
-    print("  -m, --model <name>        Specify the model (default: gpt-3.5-turbo).")
+    print("  -m, --model <name>        Specify the model (default: gpt-3.5-turbo-16k).")
     print("  -l, --l-models            List available models.")
     print("  -s, --software <name>     Learn about software using its man page.\n")
 
@@ -188,7 +188,7 @@ def highlight_code_blocks(text):
 # Help is handled in a custom way
 parser = argparse.ArgumentParser(description='Interactively chat with OpenAI.', add_help=False)
 parser.add_argument('--api_key', action='store_true', help='Prompt for your OpenAI API key.')
-parser.add_argument('-m', '--model', type=str, default="gpt-3.5-turbo", help='The model to be used for the conversation.')
+parser.add_argument('-m', '--model', type=str, default="gpt-3.5-turbo-16k", help='The model to be used for the conversation.')
 parser.add_argument('-l', '--l-models', action='store_true', help='List available models.')
 parser.add_argument('-s', '--software', type=str, help='Learn about a software using its man page.')
 parser.add_argument('-h', '--help', action='store_true', help='Display this help message and exit.')
