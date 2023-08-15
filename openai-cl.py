@@ -1,24 +1,35 @@
-import openai
+# Standard libraries
+import argparse
 import os
 import re
-import argparse
-import sys
-import time
-import threading
 import subprocess
-from prompt_toolkit.keys import Keys
-from prompt_toolkit import PromptSession
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.styles import Style
-from prompt_toolkit import print_formatted_text
+import sys
+import threading
+import time
+
+# OpenAI
+import openai
+
+# Prompt Toolkit
+from prompt_toolkit import PromptSession, print_formatted_text
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.formatted_text import FormattedText
-from pygments.lexers import PythonLexer, get_lexer_by_name, guess_lexer
-from prompt_toolkit.shortcuts import prompt
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.keys import Keys
 from prompt_toolkit.lexers import PygmentsLexer
+from prompt_toolkit.shortcuts import prompt
+from prompt_toolkit.styles import Style
+
+# Pygments
 from pygments import highlight
 from pygments.formatters.terminal import TerminalFormatter
+from pygments.lexers import PythonLexer, get_lexer_by_name, guess_lexer
+
+# Rich
 from rich.console import Console
 from rich.markdown import Markdown
+
+# Halo
 from halo import Halo
 
 # Set title.
@@ -180,7 +191,7 @@ def highlight_code_blocks(text):
 # Define argument parser
 # Help is handled in a custom way
 parser = argparse.ArgumentParser(description='Interactively chat with OpenAI.', add_help=False)
-parser.add_argument('--api_key', type=str, help='Your OpenAI API key.')
+parser.add_argument('--api_key', action='store_true', help='Prompt for your OpenAI API key.')
 parser.add_argument('-m', '--model', type=str, default="gpt-3.5-turbo", help='The model to be used for the conversation.')
 parser.add_argument('-l', '--l-models', action='store_true', help='List available models.')
 parser.add_argument('-s', '--software', type=str, help='Learn about a software using its man page.')
@@ -196,20 +207,22 @@ if args.help:
     display_help()
     sys.exit(0)
 
-# Software information
 if args.software:
+    if os.name == 'nt':
+        print("Sorry, the man page functionality is not available on Windows.")
+        sys.exit(1)
     get_software_info(args.software)  # Pass the software name to the function
+
 
 if not args.software:
     display_intro()
 
-# Set API key from command line argument
+# Set API key
 if args.api_key:
-    openai.api_key = args.api_key
-    print("API Key has been set for this session.")
+    openai.api_key = input("Please enter your OpenAI API key: ")
     print("Remember, this environment variable will only persist for the duration of this script. "
-          "If you want to avoid providing your API key each time, please save your API key as "
-          "an environment variable in your system settings.")
+        "If you want to avoid providing your API key each time, please save your API key as "
+        "an environment variable in your system settings.")
 else:
     # Get API key from environment variables
     openai.api_key = os.getenv("OPENAI_API_TOKEN")
@@ -269,12 +282,17 @@ last_response = ""
 
 while True:
     # When prompting the user:
-    user_input = session.prompt([('class:you-prompt', '    You:'), ('class:input', '\n    ')],
-                               multiline=True,
-                                key_bindings=kb,
-                                style=style,
-                                wrap_lines=True,
-                                prompt_continuation=lambda width, line_number, is_soft_wrap: '    ')
+    user_input = session.prompt(
+        [('class:you-prompt', '    You:'), ('class:input', '\n')],
+        multiline=True,
+        key_bindings=kb,
+        style=style,
+        wrap_lines=True,
+        complete_while_typing=True,
+        enable_history_search=True,
+        # lexer=PygmentsLexer(PythonLexer),
+        prompt_continuation=lambda width, line_number, is_soft_wrap: '')
+
 
     # Check for exit_flag
     if exit_flag:
@@ -312,11 +330,20 @@ while True:
         spinner.start()
 
         # Get AI response using spinner
-        response = openai.ChatCompletion.create(
-            model=model,
-            messages=messages,
-            temperature=0.7
-        )
+        try:
+            response = openai.ChatCompletion.create(
+                model=model,
+                messages=messages,
+                temperature=0.7
+            )
+        except Exception as e:
+            response = {
+                'choices': [{
+                    'message': {
+                        'content': f"An error occurred: {str(e)}"
+                    }
+                }]
+            }
 
         # Save the last response.
         last_response = response['choices'][0]['message']['content']
@@ -335,9 +362,9 @@ while True:
         # Print AI response in bold
         print()  # This will add a line break
         print_formatted_text(FormattedText([('bg:red fg:white bold', '    GPT:')]), style=style)
-        print("    ", end="")
+        # print("    ", end="")
         display_response(response['choices'][0]['message']['content'])
-        # print()  # extra line break for visual separation
+        print()  # extra line break for visual separation
 
         # Add AI message to messages for the context of the next message
         messages.append({"role": "assistant", "content": response['choices'][0]['message']['content']})
