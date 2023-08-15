@@ -41,8 +41,12 @@ fi
 if [[ ! ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
     # Determine which shell the user is using
     CURRENT_SHELL=$(basename $SHELL)
-    RC_FILE=""
+    if [[ "$CURRENT_SHELL" != "bash" && "$CURRENT_SHELL" != "zsh" ]]; then
+        # If $SHELL doesn't give us bash or zsh, check /etc/passwd
+        CURRENT_SHELL=$(basename $(grep $(whoami) /etc/passwd | cut -d: -f7))
+    fi
 
+    RC_FILE=""
     if [[ "$CURRENT_SHELL" == "bash" ]]; then
         RC_FILE="$HOME/.bashrc"
     elif [[ "$CURRENT_SHELL" == "zsh" ]]; then
@@ -51,6 +55,7 @@ if [[ ! ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
         echo "Unsupported shell. Please manually add ~/.local/bin to your PATH."
         exit
     fi
+
 
     # Prompt the user to modify the appropriate rc file
     read -p "Add ~/.local/bin to your PATH in $RC_FILE? (y/n) " -n 1 -r
@@ -178,8 +183,8 @@ echo "Checking for OPENAI_API_TOKEN..."
 if [[ -z "${OPENAI_API_TOKEN}" ]]; then
     read -p "Please provide your OpenAI API token (or press enter to skip): " TOKEN
     if [[ ! -z "${TOKEN}" ]]; then
-        echo "export OPENAI_API_TOKEN=$TOKEN" >> ~/.bashrc
-        echo "Added OPENAI_API_TOKEN to ~/.bashrc."
+        echo "export OPENAI_API_TOKEN=$TOKEN" >> $RC_FILE
+        echo "Added OPENAI_API_TOKEN to $RC_FILE."
 
         # Export the token for the current session
         export OPENAI_API_TOKEN=$TOKEN
