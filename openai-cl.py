@@ -33,7 +33,10 @@ from rich.markdown import Markdown
 from halo import Halo
 
 # Set title.
-print('\033]0;OpenAI Command-Line Chat\a', end='', flush=True)
+try:
+    print('\033]0;OpenAI Command-Line Chat\a', end='', flush=True)
+except AttributeError:
+    pass  # Silently pass if there's an issue setting the terminal title
 
 # Clear the terminal
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -134,27 +137,20 @@ def get_software_info(software_name):
         man_page = subprocess.check_output(['man', software_name], universal_newlines=True)
         messages.append({"role": "assistant", "content": f"Here's the man page for {software_name}:\n{man_page}"})
     except subprocess.CalledProcessError:
-        # Clear the screen
-        os.system('cls' if os.name == 'nt' else 'clear')
+        # Man page not found. Ask the user if they want to try the -h flag.
+        user_decision = input(f"No man page found for {software_name}. Do you want to try running '{software_name} -h'? (y/n): ").strip().lower()
 
-        # Display the message
-        print(f"I'm sorry, I couldn't find a man page for {software_name}.")
-        print("Please ensure that the software name is correct or that a man page exists for it.")
-        print()
-        # Prompt the user to press any key to continue
-        print("Press any key to continue...")
+        if user_decision == 'y':
+            # Try getting help using the -h flag
+            try:
+                help_output = subprocess.check_output([software_name, '-h'], universal_newlines=True, stderr=subprocess.STDOUT)
+                messages.append({"role": "assistant", "content": f"Here's the help output for {software_name}:\n{help_output}"})
+            except subprocess.CalledProcessError:
+                # Software couldn't be executed with -h flag
+                messages.append({"role": "assistant", "content": f"No man page entry exists for {software_name} and it could not be executed with the '-h' flag. Ensure the software is installed and the name is spelled correctly."})
+        else:
+            messages.append({"role": "assistant", "content": f"Okay, skipping the attempt to run '{software_name} -h'."})
 
-        kb = KeyBindings()
-
-        @kb.add(Keys.Any)
-        def _(event):
-            event.app.exit()
-
-        session = PromptSession(key_bindings=kb)
-        session.prompt()
-
-        # Exit the script
-        exit()
     print("\nNote: GPT has been trained on the software provided. You can now ask questions and have a conversation about the man page.\n")
 
 def highlight_code_blocks(text):
