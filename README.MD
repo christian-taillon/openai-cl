@@ -99,12 +99,6 @@ After installation, you can use the `openai-cl` shortcut from anywhere on your s
 openai-cl
 ```
 
-If you haven't added your API key to your environment variables, you can pass it with the `--api_key` argument:
-
-```bash
-openai-cl --api_key YOUR_API_KEY
-```
-
 You can specify a model for the conversation:
 
 ```bash
