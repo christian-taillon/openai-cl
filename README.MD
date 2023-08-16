@@ -56,6 +56,41 @@ For those who would like install helpers, I have provided some based on other op
    openai-cl
    ```
 
+### Windows
+
+1. **Clone the Repository (or Download the Zip)**:
+   Download the repository zip from the GitHub page or use a Git client if you have one installed.
+
+   Once downloaded, extract the zip and navigate to its directory.
+
+2. **Run the Installation Script**:
+
+   Open a PowerShell prompt as administrator. Navigate to the directory containing the installation script and run:
+
+   ```powershell
+   .\install.ps1
+   ```
+
+   You'll have the option to set your OpenAI API token as an environment variable. You can either provide your token or skip this step.
+
+3. **Usage**:
+   Once the installation is complete, you can use the tool from anywhere by typing `openai-cl` in a command prompt or PowerShell window.
+
+
+## Uninstall
+
+To uninstall simply pass the `--uninstall` argument to the install script.
+
+### macOS & Linux
+```bash
+./install.sh --uninstall
+```
+
+### Windows
+```powershell
+.\install.ps1 --uninstall
+```
+
 ## Usage
 
 After installation, you can use the `openai-cl` shortcut from anywhere on your system. This allows you to engage in an interactive chat with an AI model:
