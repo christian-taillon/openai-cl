@@ -111,9 +111,9 @@ After installation, you can use the `openai-cl` shortcut from anywhere on your s
 
 ## Syntax Highlighting
 This tool includes syntax highlighting for improved readability and use of the chat output.
-
-__Note: you can obtain the non-rendered raw markdown by sending a `raw` response to the chat to aid in copying and pasting the markdown content to programs that don't support the stylized rendered content.__
 ![syntax](/images/syntax.png)  
+
+_Note: you can obtain the non-rendered raw markdown by sending a `raw` response to the chat to aid in copying and pasting the markdown content to programs that don't support the stylized rendered content._
 
 
 
