@@ -103,7 +103,7 @@ def display_help():
     print("Options:")
     print("  -h, --help                Display this help message.")
     print("  --api_key <key>           Provide your OpenAI API key.")
-    print("  -m, --model <name>        Specify the model (default: gpt-3.5-turbo-16k).")
+    print("  -m, --model <name>        Specify the model (default: gpt-4).")
     print("  -l, --l-models            List available models.")
     print("  -s, --software <name>     Learn about software using its man page.\n")
 
@@ -188,7 +188,7 @@ def highlight_code_blocks(text):
 # Help is handled in a custom way
 parser = argparse.ArgumentParser(description='Interactively chat with OpenAI.', add_help=False)
 parser.add_argument('--api_key', action='store_true', help='Prompt for your OpenAI API key.')
-parser.add_argument('-m', '--model', type=str, default="gpt-3.5-turbo-16k", help='The model to be used for the conversation.')
+parser.add_argument('-m', '--model', type=str, default="gpt-4", help='The model to be used for the conversation.')
 parser.add_argument('-l', '--l-models', action='store_true', help='List available models.')
 parser.add_argument('-s', '--software', type=str, help='Learn about a software using its man page.')
 parser.add_argument('-h', '--help', action='store_true', help='Display this help message and exit.')
@@ -230,7 +230,7 @@ if openai.api_key is None:
 
 if args.l_models:
     # List available models
-    models = ["gpt-3.5-turbo", "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-16k-0613"]
+    models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-16k-0613"]
     for model in models:
         print(model)
     exit()
@@ -327,25 +327,16 @@ while True:
 
         # Get AI response using spinner
         try:
-            response = openai.ChatCompletion.create(
+            response = openai.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=0.7
             )
+
+            # Access the response content
+            last_response = response.choices[0].message.content
         except Exception as e:
-            response = {
-                'choices': [{
-                    'message': {
-                        'content': f"An error occurred: {str(e)}"
-                    }
-                }]
-            }
-
-        # Save the last response.
-        last_response = response['choices'][0]['message']['content']
-
-        # Clear the "Processing..." message:
-        # clear_last_line()
+            last_response = f"An error occurred: {str(e)}"
 
         spinner.stop()
 
@@ -359,8 +350,8 @@ while True:
         print()  # This will add a line break
         print_formatted_text(FormattedText([('bg:red fg:white bold', '    GPT:')]), style=style)
         # print("    ", end="")
-        display_response(response['choices'][0]['message']['content'])
+        display_response(last_response)
         print()  # extra line break for visual separation
 
         # Add AI message to messages for the context of the next message
-        messages.append({"role": "assistant", "content": response['choices'][0]['message']['content']})
+        messages.append({"role": "assistant", "content": response.choices[0].message.content})
