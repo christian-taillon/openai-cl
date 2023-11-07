@@ -4,7 +4,11 @@
 # 🤖 OpenAI Command-Line Chat Application ☕️
 
 ## Description
-Welcome to the OpenAI Command-Line Chat Application! Born out of a desire for a refined terminal client for OpenAI, this tool bridges the gap between functionality and finesse. Whether you're diving in for quick insights or seeking a seamless interaction experience, this tool has got you covered.
+Welcome to the OpenAI Command-Line Chat Application! Born out of a desire for a refined terminal client for OpenAI, this tool bridges the gap between functionality and finesse.
+
+![Intro](/images/intro.png)   
+
+Whether you're diving in for quick insights or seeking a seamless interaction experience, this tool has got you covered.
 
 - **Rapid "Training" Sessions:** Jump straight in, ask your questions, and receive real-time insights without a hitch.
 - **Mindful of Content Sensitivity:** Your peace of mind matters. Share with confidence, knowing your inputs won't be part of future model training.
@@ -91,13 +95,34 @@ To uninstall simply pass the `--uninstall` argument to the install script.
 .\install.ps1 --uninstall
 ```
 
+## Software Training
+Train your session with the -s on the manpage output of a tool you would like to learn about.
+
+```bash
+openai-cl -s scp
+```
+
+*Output*:
+![scp](/images/scp.png)   
+
 ## Usage
 
 After installation, you can use the `openai-cl` shortcut from anywhere on your system. This allows you to engage in an interactive chat with an AI model:
 
+## Syntax Highlighting
+This tool includes syntax highlighting for improved readability and use of the chat output.
+![syntax](/images/syntax.png)  
+
+_Note: you can obtain the non-rendered raw markdown by sending a `raw` response to the chat to aid in copying and pasting the markdown content to programs that don't support the stylized rendered content._
+
+
+
 ```bash
 openai-cl
 ```
+
+You can provide the helper page by passing the `-h` argument.
+![Help](/images/help.png)   
 
 You can specify a model for the conversation:
 
