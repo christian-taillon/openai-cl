@@ -350,7 +350,13 @@ while True:
         print()  # This will add a line break
         print_formatted_text(FormattedText([('bg:red fg:white bold', '    GPT:')]), style=style)
         # print("    ", end="")
-        display_response(last_response)
+        
+        if last_response is not None:
+            display_response(last_response)
+        else:
+            print("No response to display.")
+        display_response(str(last_response))
+        
         print()  # extra line break for visual separation
 
         # Add AI message to messages for the context of the next message
