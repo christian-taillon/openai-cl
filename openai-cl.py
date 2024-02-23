@@ -6,6 +6,8 @@ import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
+import json
 
 # OpenAI
 import openai
@@ -101,12 +103,12 @@ def display_help():
     print("  openai-cl.py [options]\n")
 
     print("Options:")
-    print("  -h, --help                Display this help message.")
-    print("  --api_key <key>           Provide your OpenAI API key.")
-    print("  -m, --model <name>        Specify the model (default: gpt-4).")
-    print("  -l, --l-models            List available models.")
-    print("  -s, --software <name>     Learn about software using its man page.\n")
-
+    print("  -h, --help                     Display this help message.")
+    print("  --api_key <key>                Provide your OpenAI API key.")
+    print("  -m, --model <name>             Specify the model (default: gpt-4).")
+    print("  -l, --l-models                 List available models.")
+    print("  -s, --software <name>          Learn about software using its man page.\n")
+    print("  -c, --code-helper <file_path>  Let ChatGPT help you with code from a field.\n")
     print("Interactive Commands:")
     print("  help                      Show help message.")
     print("  clear                     Clear the terminal screen.")
@@ -153,6 +155,18 @@ def get_software_info(software_name):
 
     print("\nNote: GPT has been trained on the software provided. You can now ask questions and have a conversation about the man page.\n")
 
+def get_file_content(file_path):
+    try:
+        # Read the file's contents
+        with open(file_path, 'r', encoding='utf-8') as file:
+            file_contents = file.read()
+
+        # Append a message indicating the file's contents are being submitted
+        messages.append({"role": "assistant", "content": f"Submitting the contents of {file_path} to OpenAI for assistance. I need help or assistance with some code that I am working on.\n{file_contents}"})
+        print(f"GPT has been provided the code of {file_path} you're currently working on. You can now ask questions about your code.\n")
+    except FileNotFoundError:
+         messages.append({"role": "assistant", "content": f"No file was found at this path."})
+
 def highlight_code_blocks(text):
     # Regular expression to identify code blocks
     code_block_pattern = re.compile(r'```(.*?)```', re.DOTALL)
@@ -192,6 +206,7 @@ parser.add_argument('-m', '--model', type=str, default="gpt-4", help='The model 
 parser.add_argument('-l', '--l-models', action='store_true', help='List available models.')
 parser.add_argument('-s', '--software', type=str, help='Learn about a software using its man page.')
 parser.add_argument('-h', '--help', action='store_true', help='Display this help message and exit.')
+parser.add_argument('-c', '--code-helper', type=str, metavar='FILE', help='Provide a file for code assistance.')
 
 # Parse arguments
 args = parser.parse_args()
@@ -208,9 +223,12 @@ if args.software:
         print("Sorry, the man page functionality is not available on Windows.")
         sys.exit(1)
     get_software_info(args.software)  # Pass the software name to the function
+    global message
+if args.code_helper:
+    get_file_content(args.code_helper)
+    global message
 
-
-if not args.software:
+if not args.software and not args.code_helper:
     display_intro()
 
 # Set API key
@@ -298,8 +316,16 @@ while True:
     if not user_input:  # If the input is empty or None, just continue
         continue
 
-    if user_input.strip().lower() in ["raw", "markdown", "md"]:
-        print(last_response)
+    if user_input.strip().lower() in ["markdown", "md"]:
+        print(last_response) 
+    
+    if user_input.strip().lower() in ["raw"]:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(last_response) 
+        print('')
+        print('-------------------------')
+        print('')
+        continue 
 
     if user_input.strip().lower() == "clear":
         os.system('cls' if os.name == 'nt' else 'clear')
