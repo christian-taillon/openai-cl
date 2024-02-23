@@ -316,8 +316,16 @@ while True:
     if not user_input:  # If the input is empty or None, just continue
         continue
 
-    if user_input.strip().lower() in ["raw", "markdown", "md"]:
-        print(last_response)
+    if user_input.strip().lower() in ["markdown", "md"]:
+        print(last_response) 
+    
+    if user_input.strip().lower() in ["raw"]:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(last_response) 
+        print('')
+        print('-------------------------')
+        print('')
+        continue 
 
     if user_input.strip().lower() == "clear":
         os.system('cls' if os.name == 'nt' else 'clear')
