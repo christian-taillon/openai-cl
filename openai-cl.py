@@ -219,14 +219,15 @@ if args.help:
     sys.exit(0)
 
 if args.software:
+    global message
     if os.name == 'nt':
         print("Sorry, the man page functionality is not available on Windows.")
         sys.exit(1)
     get_software_info(args.software)  # Pass the software name to the function
-    global message
+
 if args.code_helper:
-    get_file_content(args.code_helper)
     global message
+    get_file_content(args.code_helper)
 
 if not args.software and not args.code_helper:
     display_intro()
@@ -381,7 +382,7 @@ while True:
             display_response(last_response)
         else:
             print("No response to display.")
-        display_response(str(last_response))
+            display_response(str(last_response))
         
         print()  # extra line break for visual separation
 
