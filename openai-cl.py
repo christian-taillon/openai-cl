@@ -200,7 +200,6 @@ def get_software_info(software_name):
             # Clean up the man page content
             cleaned_man_page = re.sub(r'\n{3,}', '\n\n', man_page)  # Reduce multiple newlines
             
-            print(f"\nNote: GPT has been provided with the man page for {software_name}. You can now ask questions about it.\n")
             return f"Here's the man page for {software_name}:\n{cleaned_man_page}"
         else:
             # Man page not found, try -h flag
@@ -331,7 +330,7 @@ def get_api_key():
     if args.api_key:
         logger.info("Using API key from command-line argument")
         return args.api_key
-    
+
     if os.getenv("OPENWEBUI_KEY"):
         logger.info("Using API key from OPENWEBUI_KEY environment variable")
         return os.getenv("OPENWEBUI_KEY")
@@ -355,10 +354,11 @@ if api_key is None:
 
 if args.software:
     SYSTEM_PROMPT = (
-        "You are an expert assistant specialized in helping users with CLI tools. "
-        "You will be provided with documentation for a specific tool if available. "
-        "Provide concise explanations, practical examples, and helpful tips. "
-        "Your responses will be rendered in markdown, so format accordingly."
+        "Expert CLI assistant focused on delivering single-command solutions. "
+        "Always prioritize using provided documentation. "
+        "Respond with exactly one command unless complexity requires alternatives. "
+        "Format commands as inline code. "
+        "Prioritize brevity - no examples or extra text unless absolutely needed."
     )
 else:
     SYSTEM_PROMPT = (
