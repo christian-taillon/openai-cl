@@ -8,9 +8,8 @@ import threading
 import time
 from pathlib import Path
 import json
-
-# OpenAI
-import openai
+import requests
+import logging
 
 # Prompt Toolkit
 from prompt_toolkit import PromptSession, print_formatted_text
@@ -39,6 +38,53 @@ try:
     print('\033]0;OpenAI Command-Line Chat\a', end='', flush=True)
 except AttributeError:
     pass  # Silently pass if there's an issue setting the terminal title
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+
+# Define the API endpoint and headers
+API_ENDPOINT = "https://api.openai.com/v1/chat/completions"
+SYSTEM_PROMPT = "You are a helpful assistant."
+
+def open_web_ui_api_request(prompt, model, api_key, base_url):
+    """Make a request to the OpenWebUI API"""
+    # Construct the full endpoint URL
+    endpoint = f"{base_url}/api/chat/completions"
+    
+    # Set up headers
+    headers = {
+        'Authorization': f'Bearer {api_key}',
+        'Content-Type': 'application/json'
+    }
+    
+    # Set up the request data
+    data = {
+        'model': model,
+        'messages': [
+            {'role': 'user', 'content': prompt}
+        ]
+    }
+    
+    try:
+        # Make the POST request
+        response = requests.post(
+            url=endpoint,
+            headers=headers,
+            json=data,
+            timeout=30
+        )
+        
+        # Raise an exception for bad status codes
+        response.raise_for_status()
+        
+        # Return the JSON response
+        return response.json()
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"API request failed: {str(e)}")
+        raise
 
 # Clear the terminal
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -167,6 +213,40 @@ def get_file_content(file_path):
     except FileNotFoundError:
          messages.append({"role": "assistant", "content": f"No file was found at this path."})
 
+# Function to load configuration
+def load_config():
+    config_path = Path.home() / '.openai-cl-config.json'
+    if config_path.exists():
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+            logger.info(f"Loaded configuration: {config}")  
+            return config
+    logger.info("No saved configuration found.")  
+    return {}
+
+# Function to save configuration
+def save_config(config):
+    config_path = Path.home() / '.openai-cl-config.json'
+    with open(config_path, 'w') as f:
+        json.dump(config, f)
+        print(f"Saved configuration: {config}")  
+
+# Add this function near the top of the file
+def validate_api_response(response):
+    """Validates the API response format and returns appropriate error messages."""
+    if not isinstance(response, dict):
+        return False, f"Invalid response type: {type(response)}"
+    if 'choices' not in response:
+        return False, f"Missing 'choices' in response: {response}"
+    if not response['choices']:
+        return False, "Empty choices array in response"
+    if 'message' not in response['choices'][0]:
+        return False, f"Missing 'message' in first choice: {response['choices'][0]}"
+    if 'content' not in response['choices'][0]['message']:
+        return False, f"Missing 'content' in message: {response['choices'][0]['message']}"
+    return True, None
+
+
 def highlight_code_blocks(text):
     # Regular expression to identify code blocks
     code_block_pattern = re.compile(r'```(.*?)```', re.DOTALL)
@@ -207,6 +287,14 @@ parser.add_argument('-l', '--l-models', action='store_true', help='List availabl
 parser.add_argument('-s', '--software', type=str, help='Learn about a software using its man page.')
 parser.add_argument('-h', '--help', action='store_true', help='Display this help message and exit.')
 parser.add_argument('-c', '--code-helper', type=str, metavar='FILE', help='Provide a file for code assistance.')
+parser.add_argument('--base_url', type=str, help='Base URL for custom OpenAI API endpoint')
+parser.add_argument('--save_config', action='store_true', help='Save the current configuration')
+parser.add_argument('--clear_config', action='store_true', help='Clear the saved configuration')
+
+# Load existing config
+config = load_config()
+if config:
+    print("Loaded saved configuration.")
 
 # Parse arguments
 args = parser.parse_args()
@@ -232,18 +320,37 @@ if args.code_helper:
 if not args.software and not args.code_helper:
     display_intro()
 
-# Set API key
+if args.clear_config:
+    save_config({})
+    print("Configuration cleared.")
+    sys.exit(0)
+
+# Set config
 if args.api_key:
-    openai.api_key = input("Please enter your OpenAI API key: ")
-    print("Remember, this environment variable will only persist for the duration of this script. "
-        "If you want to avoid providing your API key each time, please save your API key as "
-        "an environment variable in your system settings.")
-else:
-    # Get API key from environment variables
-    openai.api_key = os.getenv("OPENAI_API_TOKEN")
+    config['api_key'] = input("Please enter your API ke or add it to the environment: ")
+if args.model:
+    config['model'] = args.model
+if args.base_url:
+    config['base_url'] = args.base_url
+
+# Save config if requested
+if args.save_config:
+    save_config(config)
+    print("Configuration saved.")
+
+
+# Use config values
+api_key = config.get('api_key') or os.getenv("OPENWEBUI_KEY")
+model = args.model or config.get('model', "gpt-4")  # Modified this line
+base_url = config.get('base_url', "https://api.openai.com/v1")
+
+if 'base_url' in config:
+    API_ENDPOINT = config['base_url']
+if args.model:
+    config['model'] = args.model
 
 # Check if API key is provided or not
-if openai.api_key is None:
+if api_key is None:
     print("No OpenAI API Key provided. Please provide your API key.")
     exit()
 
@@ -255,7 +362,7 @@ if args.l_models:
     exit()
 
 # Get model from command line arguments or use default
-model = args.model
+# model = args.model
 
 # Create a flag to indicate submission
 submit_flag = False
@@ -295,6 +402,7 @@ exit_flag = False
 # Initialize last_response
 last_response = ""
 
+
 while True:
     # When prompting the user:
     user_input = session.prompt(
@@ -307,7 +415,6 @@ while True:
         enable_history_search=True,
         # lexer=PygmentsLexer(PythonLexer),
         prompt_continuation=lambda width, line_number, is_soft_wrap: '')
-
 
     # Check for exit_flag
     if exit_flag:
@@ -354,17 +461,33 @@ while True:
 
         # Get AI response using spinner
         try:
-            response = openai.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=0.7
-            )
-
+            logger.debug(f"Using model: {model}")
+            logger.debug(f"User input: {user_input}")
+            logger.debug(f"Type of model: {type(model)}")
+            logger.debug(f"Model value: {model}")
+            logger.debug(f"Type of user_input: {type(user_input)}")
+            logger.debug(f"User input value: {user_input}")
+            logger.debug(f"Type of api_key: {type(api_key)}")
+            logger.debug(f"Base URL: {base_url}")
+            
+            response = open_web_ui_api_request(user_input, model, api_key, base_url)
+            
+            # Validate response
+            is_valid, error_message = validate_api_response(response)
+            if not is_valid:
+                logger.error(f"API Response Error: {error_message}")
+                last_response = f"Error: {error_message}"
+                continue
+    
             # Access the response content
-            last_response = response.choices[0].message.content
+            last_response = response['choices'][0]['message']['content']
+            
+            # Add AI message to messages for the context of the next message
+            messages.append({"role": "assistant", "content": last_response})
         except Exception as e:
             last_response = f"An error occurred: {str(e)}"
-
+            logger.error(f"Error details: {e}", file=sys.stderr)
+            
         spinner.stop()
 
         def display_response(response_content: str):
@@ -387,4 +510,4 @@ while True:
         print()  # extra line break for visual separation
 
         # Add AI message to messages for the context of the next message
-        messages.append({"role": "assistant", "content": response.choices[0].message.content})
+        messages.append({"role": "assistant", "content": last_response})
