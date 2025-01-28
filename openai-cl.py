@@ -35,7 +35,7 @@ from halo import Halo
 
 # Set title.
 try:
-    print('\033]0;OpenAI Command-Line Chat\a', end='', flush=True)
+    print('\033]0;OpenAI API Compatible Command-Line Client\a', end='', flush=True)
 except AttributeError:
     pass  # Silently pass if there's an issue setting the terminal title
 
@@ -46,12 +46,15 @@ logging.basicConfig(level=logging.INFO)
 
 # Define the API endpoint and headers
 API_ENDPOINT = "https://api.openai.com/v1/chat/completions"
+
 SYSTEM_PROMPT = "You are a helpful assistant."
 
 def open_web_ui_api_request(prompt, model, api_key, base_url):
     """Make a request to the OpenWebUI API"""
     # Construct the full endpoint URL
     endpoint = f"{base_url}/api/chat/completions"
+    
+    logger.info(f"Making API request to OpenWebUI model: {model}")
     
     # Set up headers
     headers = {
@@ -63,18 +66,17 @@ def open_web_ui_api_request(prompt, model, api_key, base_url):
     data = {
         'model': model,
         'messages': [
+            {'role': 'system', 'content': SYSTEM_PROMPT},
             {'role': 'user', 'content': prompt}
         ]
     }
     
     try:
         # Make the POST request
-        response = requests.post(
-            url=endpoint,
-            headers=headers,
-            json=data,
-            timeout=30
-        )
+        response = requests.post(endpoint, headers=headers, json=data)
+        
+        logger.debug(f"API Response: {response.text}")
+        logger.info("API request completed")
         
         # Raise an exception for bad status codes
         response.raise_for_status()
@@ -109,8 +111,8 @@ def display_intro():
     '''
 
     print("Welcome to openai-cl!")
-    print("Simplicity meets the power of OpenAI's ChatGPT API.")
-    print("Interact with ease: Your inputs and outputs are not used for OpenAI model training.")
+    print("Simplicity meets the power of OpenAI API Compatible models.")
+    print("Interact with ease: Your inputs and outputs are not used for model training.")
     print(coffee_art)
     print("                                 Cheers (with coffee)")
     print("                                         - Christian ☕\n")
@@ -142,19 +144,23 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 # Create helper
 def display_help():
     os.system('cls' if os.name == 'nt' else 'clear')
-    print("OpenAI Command-Line Interface (CLI) Help")
-    print("=========================================")
+    print("OpenAI API Compatible Command-Line Interface (CLI) Help")
+    print("======================================================")
 
     print("\nUsage:")
     print("  openai-cl.py [options]\n")
 
     print("Options:")
     print("  -h, --help                     Display this help message.")
-    print("  --api_key <key>                Provide your OpenAI API key.")
+    print("  --api_key <key>                Provide your API key.")
     print("  -m, --model <name>             Specify the model (default: gpt-4).")
     print("  -l, --l-models                 List available models.")
     print("  -s, --software <name>          Learn about software using its man page.\n")
-    print("  -c, --code-helper <file_path>  Let ChatGPT help you with code from a field.\n")
+    print("  -c, --code-helper <file_path>  Let the AI help you with code from a file.\n")
+    print("  --base_url <url>               Specify the base URL for a custom API endpoint.")
+    print("  --save_config                  Save the current configuration.")
+    print("  --clear_config                 Clear the saved configuration.\n")
+
     print("Interactive Commands:")
     print("  help                      Show help message.")
     print("  clear                     Clear the terminal screen.")
@@ -173,11 +179,11 @@ def display_help():
     print("  openai-cl.py --api_key YOUR_API_KEY_HERE")
     print("  openai-cl.py -m gpt-3.5-turbo-16k")
     print("  openai-cl.py -s nano")
-    print("  openai-cl.py --api_key YOUR_API_KEY_HERE -m gpt-3.5-turbo-16k -s vim\n")
+    print("  openai-cl.py --api_key YOUR_API_KEY_HERE -m gpt-3.5-turbo-16k -s vim")
+    print("  openai-cl.py --base_url https://your-custom-endpoint.com/v1\n")
 
     print("Note: Keep your API key confidential. Do not expose or share it in public spaces.")
     print()
-
 
 # Teach GPT about a software
 def get_software_info(software_name):
@@ -198,8 +204,8 @@ def get_software_info(software_name):
                 messages.append({"role": "assistant", "content": f"No man page entry exists for {software_name} and it could not be executed with the '-h' flag. Ensure the software is installed and the name is spelled correctly."})
         else:
             messages.append({"role": "assistant", "content": f"Okay, skipping the attempt to run '{software_name} -h'."})
-
-    print("\nNote: GPT has been trained on the software provided. You can now ask questions and have a conversation about the man page.\n")
+    # Duplicate
+    # print("\nNote: GPT has been trained on the software provided. You can now ask questions and have a conversation about the man page.\n")
 
 def get_file_content(file_path):
     try:
@@ -282,7 +288,7 @@ def highlight_code_blocks(text):
 # Help is handled in a custom way
 parser = argparse.ArgumentParser(description='Interactively chat with OpenAI.', add_help=False)
 parser.add_argument('--api_key', action='store_true', help='Prompt for your OpenAI API key.')
-parser.add_argument('-m', '--model', type=str, default="gpt-4", help='The model to be used for the conversation.')
+parser.add_argument('-m', '--model', type=str, help='The model to be used for the conversation.')
 parser.add_argument('-l', '--l-models', action='store_true', help='List available models.')
 parser.add_argument('-s', '--software', type=str, help='Learn about a software using its man page.')
 parser.add_argument('-h', '--help', action='store_true', help='Display this help message and exit.')
@@ -306,12 +312,16 @@ if args.help:
     display_help()
     sys.exit(0)
 
+# Initialize software_info as an empty string
+software_info = ""
+
 if args.software:
-    global message
     if os.name == 'nt':
         print("Sorry, the man page functionality is not available on Windows.")
         sys.exit(1)
-    get_software_info(args.software)  # Pass the software name to the function
+    software_info = get_software_info(args.software)
+    print("\nNote: GPT has been trained on the software provided. You can now ask questions and have a conversation about the man page.\n")
+
 
 if args.code_helper:
     global message
@@ -338,16 +348,19 @@ if args.save_config:
     save_config(config)
     print("Configuration saved.")
 
-
 # Use config values
 api_key = config.get('api_key') or os.getenv("OPENWEBUI_KEY")
-model = args.model or config.get('model', "gpt-4")  # Modified this line
+model = args.model or config.get('model', "llama3.1:8b")  # Modified this line
+
+if 'model' in config: 
+    model = config['model']
+if args.model:
+    config['model'] = args.model
+
 base_url = config.get('base_url', "https://api.openai.com/v1")
 
 if 'base_url' in config:
     API_ENDPOINT = config['base_url']
-if args.model:
-    config['model'] = args.model
 
 # Check if API key is provided or not
 if api_key is None:
@@ -404,16 +417,14 @@ last_response = ""
 
 
 while True:
-    # When prompting the user:
     user_input = session.prompt(
-        [('class:you-prompt', '    You:'), ('class:input', '\n')],
+        [('class:you-prompt', f'{"You:":>11}'), ('class:input', '\n')],
         multiline=True,
         key_bindings=kb,
         style=style,
         wrap_lines=True,
         complete_while_typing=True,
         enable_history_search=True,
-        # lexer=PygmentsLexer(PythonLexer),
         prompt_continuation=lambda width, line_number, is_soft_wrap: '')
 
     # Check for exit_flag
@@ -451,9 +462,15 @@ while True:
     # Check the submit flag
     if submit_flag:
         submit_flag = False  # reset the flag
+        
+        # Combine software info with user input only if software_info is not empty
+        if software_info:
+            full_prompt = f"Hello. \n\nUser question: {user_input}"
+        else:
+            full_prompt = user_input
 
         # Add user message to messages
-        messages.append({"role": "user", "content": user_input})
+        messages.append({"role": "user", "content": full_prompt})
 
         # print_processing()
         spinner = Halo(text='Processing...', spinner='dots')
@@ -470,7 +487,7 @@ while True:
             logger.debug(f"Type of api_key: {type(api_key)}")
             logger.debug(f"Base URL: {base_url}")
             
-            response = open_web_ui_api_request(user_input, model, api_key, base_url)
+            response = open_web_ui_api_request(full_prompt, model, api_key, base_url)
             
             # Validate response
             is_valid, error_message = validate_api_response(response)
@@ -486,7 +503,7 @@ while True:
             messages.append({"role": "assistant", "content": last_response})
         except Exception as e:
             last_response = f"An error occurred: {str(e)}"
-            logger.error(f"Error details: {e}", file=sys.stderr)
+            logger.error(f"Error details: {e}")
             
         spinner.stop()
 
@@ -498,8 +515,8 @@ while True:
 
         # Print AI response in bold
         print()  # This will add a line break
-        print_formatted_text(FormattedText([('bg:red fg:white bold', '    GPT:')]), style=style)
-        # print("    ", end="")
+        ai_prompt = f'{(model[:8]+":" if len(model) > 8 else model+":"):>11}'
+        print_formatted_text(FormattedText([('bg:red fg:white bold', ai_prompt)]), style=style)
         
         if last_response is not None:
             display_response(last_response)
