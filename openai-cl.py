@@ -41,21 +41,25 @@ except AttributeError:
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
+logging.basicConfig(level=logging.ERROR)
+# Add these lines to disable markdown_it debug messages
+markdown_it_logger = logging.getLogger('markdown_it')
+markdown_it_logger.setLevel(logging.ERROR)  # or logging.ERROR to only show errors
 
 # Define the API endpoint and headers
 API_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 
-SYSTEM_PROMPT = "You are a helpful assistant."
-
 def open_web_ui_api_request(prompt, model, api_key, base_url):
     """Make a request to the OpenWebUI API"""
     # Construct the full endpoint URL
-    endpoint = f"{base_url}/api/chat/completions"
+    if base_url == None:
+        endpoint = API_ENDPOINT
+    else:
+        # Otherwise, construct the endpoint using the base_url
+        endpoint = f"{base_url}/api/chat/completions"
     
     logger.info(f"Making API request to OpenWebUI model: {model}")
-    
+    logger.info(f"Using endpoint: {endpoint}")
     # Set up headers
     headers = {
         'Authorization': f'Bearer {api_key}',
@@ -65,10 +69,7 @@ def open_web_ui_api_request(prompt, model, api_key, base_url):
     # Set up the request data
     data = {
         'model': model,
-        'messages': [
-            {'role': 'system', 'content': SYSTEM_PROMPT},
-            {'role': 'user', 'content': prompt}
-        ]
+        'messages': messages
     }
     
     try:
@@ -185,27 +186,48 @@ def display_help():
     print("Note: Keep your API key confidential. Do not expose or share it in public spaces.")
     print()
 
-# Teach GPT about a software
 def get_software_info(software_name):
     try:
-        man_page = subprocess.check_output(['man', software_name], universal_newlines=True)
-        messages.append({"role": "assistant", "content": f"Here's the man page for {software_name}:\n{man_page}"})
-    except subprocess.CalledProcessError:
-        # Man page not found. Ask the user if they want to try the -h flag.
-        user_decision = input(f"No man page found for {software_name}. Do you want to try running '{software_name} -h'? (y/n): ").strip().lower()
+        # Use 'man -P cat' to get raw man page content without formatting
+        process = subprocess.Popen(['man', '-P', 'cat', software_name], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        man_page, stderr = process.communicate()
 
-        if user_decision == 'y':
-            # Try getting help using the -h flag
-            try:
-                help_output = subprocess.check_output([software_name, '-h'], universal_newlines=True, stderr=subprocess.STDOUT)
-                messages.append({"role": "assistant", "content": f"Here's the help output for {software_name}:\n{help_output}"})
-            except subprocess.CalledProcessError:
-                # Software couldn't be executed with -h flag
-                messages.append({"role": "assistant", "content": f"No man page entry exists for {software_name} and it could not be executed with the '-h' flag. Ensure the software is installed and the name is spelled correctly."})
+        if process.returncode == 0:
+            # Man page found successfully
+            if stderr:
+                logger.warning(f"Warnings while retrieving man page for {software_name}:\n{stderr}")
+            
+            # Clean up the man page content
+            cleaned_man_page = re.sub(r'\n{3,}', '\n\n', man_page)  # Reduce multiple newlines
+            
+            print(f"\nNote: GPT has been provided with the man page for {software_name}. You can now ask questions about it.\n")
+            return f"Here's the man page for {software_name}:\n{cleaned_man_page}"
         else:
-            messages.append({"role": "assistant", "content": f"Okay, skipping the attempt to run '{software_name} -h'."})
-    # Duplicate
-    # print("\nNote: GPT has been trained on the software provided. You can now ask questions and have a conversation about the man page.\n")
+            # Man page not found, try -h flag
+            print(f"No man page found for {software_name}. Trying '{software_name} -h'...")
+            help_process = subprocess.Popen([software_name, '-h'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            help_output, help_stderr = help_process.communicate()
+
+            if help_process.returncode == 0:
+                # -h flag worked
+                print(f"\nNote: GPT has been provided with the help output for {software_name}. You can now ask questions about it.\n")
+                return f"Here's the help output for {software_name}:\n{help_output}"
+            else:
+                # Both man page and -h flag failed
+                error_message = f"Unable to retrieve information for {software_name}. "
+                error_message += "No man page entry exists and it could not be executed with the '-h' flag. "
+                error_message += "Ensure the software is installed and the name is spelled correctly."
+                print(f"\nWarning: {error_message}\n")
+                return error_message
+
+    except FileNotFoundError:
+        error_message = f"The command 'man' was not found. This feature may not be available on your system."
+        print(f"\nError: {error_message}\n")
+        return error_message
+    except Exception as e:
+        error_message = f"An unexpected error occurred while trying to get information for {software_name}: {str(e)}"
+        print(f"\nError: {error_message}\n")
+        return error_message
 
 def get_file_content(file_path):
     try:
@@ -286,8 +308,8 @@ def highlight_code_blocks(text):
 
 # Define argument parser
 # Help is handled in a custom way
-parser = argparse.ArgumentParser(description='Interactively chat with OpenAI.', add_help=False)
-parser.add_argument('--api_key', action='store_true', help='Prompt for your OpenAI API key.')
+parser = argparse.ArgumentParser(description='Interactively chat with LLMs.', add_help=False)
+parser.add_argument('--api_key', type=str, help='Your OpenAI API key. Can be set as environment variable.')
 parser.add_argument('-m', '--model', type=str, help='The model to be used for the conversation.')
 parser.add_argument('-l', '--l-models', action='store_true', help='List available models.')
 parser.add_argument('-s', '--software', type=str, help='Learn about a software using its man page.')
@@ -305,8 +327,48 @@ if config:
 # Parse arguments
 args = parser.parse_args()
 
-# Starting the conversation with the AI
-messages = []
+def get_api_key():
+    if args.api_key:
+        logger.info("Using API key from command-line argument")
+        return args.api_key
+    
+    if os.getenv("OPENWEBUI_KEY"):
+        logger.info("Using API key from OPENWEBUI_KEY environment variable")
+        return os.getenv("OPENWEBUI_KEY")
+    
+    if os.getenv("OPENAI_API_TOKEN"):
+        logger.info("Using API key from OPENAI_API_TOKEN environment variable")
+        return os.getenv("OPENAI_API_TOKEN")
+    
+    logger.error("No API key found")
+    return None
+
+api_key = get_api_key()
+
+if api_key is None:
+    print("No OpenAI API Key provided. Please use one of the following methods:")
+    print("1. Use the --api_key command-line argument")
+    print("2. Set the OPENWEBUI_KEY environment variable")
+    print("3. Set the OPENAI_API_TOKEN environment variable")
+    exit(1)
+
+
+if args.software:
+    SYSTEM_PROMPT = (
+        "You are an expert assistant specialized in helping users with CLI tools. "
+        "You will be provided with documentation for a specific tool if available. "
+        "Provide concise explanations, practical examples, and helpful tips. "
+        "Your responses will be rendered in markdown, so format accordingly."
+    )
+else:
+    SYSTEM_PROMPT = (
+        "You are a helpful assistant communicating with a user. "
+        "Be concise in your responses. Your output will be rendered in markdown, "
+        "so feel free to use markdown formatting for clarity and structure."
+    )
+
+# Initialize messages list with the system prompt
+messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
 if args.help:
     display_help()
@@ -320,11 +382,14 @@ if args.software:
         print("Sorry, the man page functionality is not available on Windows.")
         sys.exit(1)
     software_info = get_software_info(args.software)
-    print("\nNote: GPT has been trained on the software provided. You can now ask questions and have a conversation about the man page.\n")
+    if software_info:
+        # Temp - instead of system prompt, I want to try adding it to the first message. 
+        print(f"\nNote: GPT has been provided with the man page for {args.software}. You can now ask questions about it.\n")
+    else:
+        print("Unable to provide information about the specified software. Continuing without software context.")
 
 
 if args.code_helper:
-    global message
     get_file_content(args.code_helper)
 
 if not args.software and not args.code_helper:
@@ -335,9 +400,6 @@ if args.clear_config:
     print("Configuration cleared.")
     sys.exit(0)
 
-# Set config
-if args.api_key:
-    config['api_key'] = input("Please enter your API ke or add it to the environment: ")
 if args.model:
     config['model'] = args.model
 if args.base_url:
@@ -349,7 +411,6 @@ if args.save_config:
     print("Configuration saved.")
 
 # Use config values
-api_key = config.get('api_key') or os.getenv("OPENWEBUI_KEY")
 model = args.model or config.get('model', "llama3.1:8b")  # Modified this line
 
 if 'model' in config: 
@@ -357,7 +418,7 @@ if 'model' in config:
 if args.model:
     config['model'] = args.model
 
-base_url = config.get('base_url', "https://api.openai.com/v1")
+base_url = config.get('base_url')
 
 if 'base_url' in config:
     API_ENDPOINT = config['base_url']
@@ -415,6 +476,8 @@ exit_flag = False
 # Initialize last_response
 last_response = ""
 
+# Intialize first_message_sent to only send software on first message
+first_message_sent = False
 
 while True:
     user_input = session.prompt(
@@ -463,31 +526,28 @@ while True:
     if submit_flag:
         submit_flag = False  # reset the flag
         
-        # Combine software info with user input only if software_info is not empty
-        if software_info:
-            full_prompt = f"Hello. \n\nUser question: {user_input}"
+        if not first_message_sent and software_info:
+            # Combine the software info with the user's first message
+            combined_message = f"Documentation for the specified CLI tool:\n\n{software_info}\n\nUser's question: {user_input}"
+            messages.append({"role": "user", "content": combined_message})
+            first_message_sent = True
         else:
-            full_prompt = user_input
+            # For subsequent messages, just add the user input
+            messages.append({"role": "user", "content": user_input})
 
-        # Add user message to messages
-        messages.append({"role": "user", "content": full_prompt})
-
-        # print_processing()
         spinner = Halo(text='Processing...', spinner='dots')
         spinner.start()
 
         # Get AI response using spinner
         try:
             logger.debug(f"Using model: {model}")
-            logger.debug(f"User input: {user_input}")
+            logger.debug(f"Messages: {messages}")
             logger.debug(f"Type of model: {type(model)}")
             logger.debug(f"Model value: {model}")
-            logger.debug(f"Type of user_input: {type(user_input)}")
-            logger.debug(f"User input value: {user_input}")
             logger.debug(f"Type of api_key: {type(api_key)}")
             logger.debug(f"Base URL: {base_url}")
             
-            response = open_web_ui_api_request(full_prompt, model, api_key, base_url)
+            response = open_web_ui_api_request(messages, model, api_key, base_url)
             
             # Validate response
             is_valid, error_message = validate_api_response(response)
