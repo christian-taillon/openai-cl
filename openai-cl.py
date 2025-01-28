@@ -89,6 +89,39 @@ def open_web_ui_api_request(prompt, model, api_key, base_url):
         logger.error(f"API request failed: {str(e)}")
         raise
 
+def list_available_models(api_key, base_url=None):
+    """
+    Fetch and list available models from the OpenAI API or a custom endpoint.
+    """
+    if base_url:
+        url = f"{base_url}/api/models"
+    else:
+        url = "https://api.openai.com/v1/models"
+
+    headers = {
+        "Authorization": f"Bearer {api_key}"
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        models_data = response.json()
+
+        # Clear the screen
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+        if "data" in models_data:
+            print("Available models:")
+            for model in models_data["data"]:
+                print(f"- {model['id']}")
+        else:
+            print("No models found in the response.")
+
+    except requests.exceptions.RequestException as e:
+        # Clear the screen
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(f"Error fetching models: {e}")
+
 # Clear the terminal
 os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -430,10 +463,8 @@ if api_key is None:
 
 if args.l_models:
     # List available models
-    models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-16k-0613"]
-    for model in models:
-        print(model)
-    exit()
+    list_available_models(api_key, base_url)
+    sys.exit(0)
 
 # Get model from command line arguments or use default
 # model = args.model
