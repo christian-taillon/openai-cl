@@ -151,6 +151,8 @@ You can list the available models for your configured API using the `-l` or `--l
 openai-cl -l
 ```
 
+![list_models](/images/list_models.png)
+
 ## Software Training
 
 Train your session with the `-s` option on the manpage output of a tool you would like to learn about:
@@ -162,6 +164,12 @@ openai-cl -s ssh
 ![scp](/images/software_training_ssh.png)
 
 _Note: You can obtain the non-rendered raw markdown by sending a `raw` response to the chat._
+
+## Help 
+
+List availalbe options: 
+
+![help](/images/help.png)
 
 ## Contributing
 
