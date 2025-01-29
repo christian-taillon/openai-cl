@@ -557,9 +557,13 @@ while True:
     if submit_flag:
         submit_flag = False  # reset the flag
         
-        if not first_message_sent and software_info:
-            # Combine the software info with the user's first message
-            combined_message = f"Documentation for the specified CLI tool:\n\n{software_info}\n\nUser's question: {user_input}"
+        if not first_message_sent:
+            combined_message = ""
+            if software_info:
+                combined_message += f"Documentation for the specified CLI tool:\n\n{software_info}\n\n"
+            if args.code_helper:
+                combined_message += f"Code from the specified file:\n\n{messages[-1]['content']}\n\n"
+            combined_message += f"User's question: {user_input}"
             messages.append({"role": "user", "content": combined_message})
             first_message_sent = True
         else:
