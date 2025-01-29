@@ -1,32 +1,35 @@
 
----
-
-# 🤖 OpenAI Command-Line Chat Application ☕️
+# 🤖 OpenAI-API Compatible Command-Line Chat Application ☕️
 
 ## Description
-Welcome to the OpenAI Command-Line Chat Application! Born out of a desire for a refined terminal client for OpenAI, this tool bridges the gap between functionality and finesse.
 
-![Intro](/images/intro.png)   
+Welcome to the OpenAI-API Compatible Command-Line Chat Application! This versatile tool is designed to work with any OpenAI API-compliant endpoints, allowing you to interact with various AI models, including self hosten models, through a refined terminal interface.
 
-Whether you're diving in for quick insights or seeking a seamless interaction experience, this tool has got you covered.
+![Intro](/images/intro.png)
 
-- **Rapid "Training" Sessions:** Jump straight in, ask your questions, and receive real-time insights without a hitch.
-- **Mindful of Content Sensitivity:** Your peace of mind matters. Share with confidence, knowing your inputs won't be part of future model training.
-- **Copy-Paste & Multi-Line Inputs:** Enhance your interactions with support for effortless copy-pasting and multi-line inputs.
-- **Aesthetic Terminal Interface:** A delightful terminal experience awaits because aesthetics matter.
-- **Syntax Highlighting:** ChatGPT's responses include syntax highlighting, making code and technical responses easier to read.
-- **Platform Agnostic (Mostly):** Efforts have been made to ensure this tool feels at home, regardless of your OS. However, it's worth noting that my primary testing ground is Linux. If you encounter quirks elsewhere, do give me a shout!
+Whether you're seeking quick insights, engaging in in-depth conversations, or working with custom models, this application offers a seamless and feature-rich experience.
 
-Per OpenAI's documentation:
+Key Features:
+- Compatible with OpenAI API and custom endpoints
+- Rapid "Training" Sessions for quick insights
+- Copy-Paste & Multi-Line Input support
+- Aesthetic Terminal Interface with Syntax Highlighting
+- Platform Agnostic design (primary testing on Linux)
 
-> "OpenAI will not use data submitted by customers via our API to train or improve our models."
+## Setting up the API Key
 
-The project harnesses the OpenAI Python client. It provides functionalities to select different models, list available models, send the man page output to OpenAI to discuss it, and engage in an interactive chat with the chosen AI model.
+To use this application, you need to provide an API key. You have several options:
 
-## Setting up the OpenAI API Key
-To get started, you'll require an OpenAI API key. Secure yours from the [API Keys Settings](https://platform.openai.com/account/api-keys) on the OpenAI platform.
-> **Note:** Always keep your API key confidential.
+1. Use the `--api_key` command-line argument
+2. Set the `OPENWEBUI_KEY` environment variable
+3. Set the `OPENAI_API_TOKEN` environment variable
 
+If no API key is provided, the application will prompt you with these options.
+
+Example:
+```bash
+export OPENAI_API_TOKEN=your_api_key_here
+```
 
 ## Installation
 Note that these installations haven't been widely tested. It is possible to execute the python script your self and bypass the installers. Simply manually installing the python library requirements and manually adding your API key to your environment variables.
@@ -77,90 +80,95 @@ For those who would like install helpers, I have provided some based on other op
 
    You'll have the option to set your OpenAI API token as an environment variable. You can either provide your token or skip this step.
 
-3. **Usage**:
-   Once the installation is complete, you can use the tool from anywhere by typing `openai-cl` in a command prompt or PowerShell window.
-
-
-## Uninstall
-
-To uninstall simply pass the `--uninstall` argument to the install script.
-
-### macOS & Linux
-```bash
-./install.sh --uninstall
-```
-
-### Windows
-```powershell
-.\install.ps1 --uninstall
-```
-
-## Software Training
-Train your session with the -s on the manpage output of a tool you would like to learn about.
-
-```bash
-openai-cl -s scp
-```
-
-*Output*:
-![scp](/images/scp.png)   
-
 ## Usage
 
-After installation, you can use the `openai-cl` shortcut from anywhere on your system. This allows you to engage in an interactive chat with an AI model:
-
-## Syntax Highlighting
-This tool includes syntax highlighting for improved readability and use of the chat output.
-![syntax](/images/syntax.png)  
-
-_Note: you can obtain the non-rendered raw markdown by sending a `raw` response to the chat to aid in copying and pasting the markdown content to programs that don't support the stylized rendered content._
-
-
+After installation, use the `openai-cl` command to start the application:
 
 ```bash
 openai-cl
 ```
 
-You can provide the helper page by passing the `-h` argument.
-![Help](/images/help.png)   
+### Command-line Options
 
-You can specify a model for the conversation:
+- `-h, --help`: Display the help message
+- `--api_key <key>`: Provide your API key
+- `-m, --model <name>`: Specify the model (default: gpt-4)
+- `-l, --l-models`: List available models
+- `-s, --software <name>`: Learn about software using its man page
+- `-c, --code-helper <file_path>`: Let the AI help you with code from a file
+- `--base_url <url>`: Specify the base URL for a custom API endpoint
+- `--save_config`: Save the current configuration
+- `--clear_config`: Clear the saved configuration
 
-```bash
-openai-cl -m gpt-3.5-turbo
-```
+### Interactive Commands
 
-To see a list of available models:
+During the chat session, you can use these commands:
+- `help`: Show help message
+- `clear`: Clear the terminal screen
+- `exit`: End the interactive session
+- `raw` or `markdown` or `md`: Display the last AI response in raw format, preserving markdown syntax
+
+### Interactive Session Tips
+
+- Type or paste your messages into the terminal
+- Submit multi-line messages with `Ctrl+Space`
+- AI responses appear after the 'AI:' prompt
+- Use commands like help, clear, or exit by typing and submitting with `Ctrl+Space`
+- End the session with `Ctrl+q`
+
+## Examples
+
+1. Using a specific API key:
+   ```bash
+   openai-cl --api_key YOUR_API_KEY_HERE
+   ```
+
+2. Choosing a different model:
+   ```bash
+   openai-cl -m llama3.2:3b
+   ```
+
+3. Learning about software using its man page:
+   ```bash
+   openai-cl -s nano
+   ```
+
+4. Using a custom API host:
+   ```bash
+   openai-cl --base_url https://your-custom-endpoint.com
+   ```
+
+5. Listing available models:
+   ```bash
+   openai-cl -l
+   ```
+
+## Listing Models
+
+You can list the available models for your configured API using the `-l` or `--l-models` option. This is particularly useful when working with custom endpoints or to check which models are accessible with your current API key.
 
 ```bash
 openai-cl -l
 ```
 
-To learn about a software using its man page:
+## Software Training
+
+Train your session with the `-s` option on the manpage output of a tool you would like to learn about:
 
 ```bash
-openai-cl -s SOFTWARE_NAME
+openai-cl -s ssh
 ```
 
-A few examples of this:
-```bash
-openai-cl -s cat
-openai-cl -s yara
-openai-cl -s docker
-openai-cl -s scp
-```
+![scp](/images/software_training_ssh.png)
 
-During the interactive session:
-- Type or paste your messages into the terminal.
-- For multi-line messages, use `Ctrl+Space` to submit.
-- AI responses will follow the 'AI:' prompt.
-- Commands like `help`, `clear`, or `exit` can be typed and submitted with `Ctrl+Space`.
-- Use `Ctrl+q` to end the session.
+_Note: You can obtain the non-rendered raw markdown by sending a `raw` response to the chat._
 
----
+## Contributing
 
-This project was primary made for my own use cases but I wondered if it might be beneficial to others, particularly as it offers a method off accessing OpenAI's services without providing ones prompt for future model training (as of the time of writing).
+If you'd like to contribute, please fork the repository and use a feature branch. Pull requests are warmly welcome.
 
-Encountering bugs? I'm here to help. 😉
+## Support
 
-**Contributing**: If you'd like to contribute, please fork the repository and use a feature branch. Pull requests are warmly welcome.
+Encountering bugs or have questions? Feel free to open an issue on the GitHub repository.
+
+Remember to keep your API key confidential and never share it in public spaces.
